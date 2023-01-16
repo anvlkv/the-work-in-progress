@@ -1,16 +1,226 @@
-import {Composition} from 'remotion';
-import {MyComposition} from './Composition';
+import {Composition, staticFile} from 'remotion';
+import {Ep01} from './Episodes/Ep01/Ep01';
+import {Episode} from './Episode';
+import {Trailer} from './Episodes/Trailer/Trailer';
+import {SpeakingHead} from './Head/SpeakingHead';
+import {PresentationClip} from './PresentationClip';
+import {Slides} from './Slides';
+import {VideoClip} from './VideoClip';
+import {Splash} from './Splash';
+import { ClipPreview } from './ClipPreview';
+import { ClipExport } from './ClipExport';
+import { INTRO, makeEnding } from './Episodes/constants';
+import { SPLASH_DURATION_S, videoProps } from './constants';
+// Each <Composition> is an entry in the sidebar!
 
 export const RemotionRoot: React.FC = () => {
 	return (
 		<>
 			<Composition
-				id="MyComp"
-				component={MyComposition}
-				durationInFrames={60}
-				fps={30}
-				width={1280}
-				height={720}
+				// You can take the "id" to render a video:
+				// npx remotion render src/index.ts <id> out/video.mp4
+				id="VideoClip"
+				component={VideoClip}
+				durationInFrames={videoProps.fps * (1 + 27)}
+				{...videoProps}
+				// You can override these props for each render:
+				// https://www.remotion.dev/docs/parametrized-rendering
+				defaultProps={{
+					videoClip: 'sample.mov',
+				}}
+			/>
+			<Composition
+				id="PresentationClip"
+				component={PresentationClip}
+				durationInFrames={videoProps.fps * (1 + 27)}
+				{...videoProps}
+				defaultProps={{
+					textToSpeech:
+						'This is a presentation clip of the work in progress by twopack.gallery',
+				}}
+			/>
+			<Composition
+				id="PresentationClipWithText"
+				component={PresentationClip}
+				durationInFrames={videoProps.fps * (1 + 27)}
+				{...videoProps}
+				defaultProps={{
+					text: `
+					- why are we doing this?
+					- what to expect?
+					- how to support?
+					`,
+					textToSpeech:
+						'This is a presentation clip of the work in progress by twopack.gallery',
+				}}
+			/>
+			<Composition
+				id="SpeakingHead"
+				component={SpeakingHead}
+				durationInFrames={videoProps.fps * (1 + 27)}
+				{...videoProps}
+				defaultProps={{
+					text: `<speak>
+					<s>Breaks are possible</s>
+							<break time="0.5s" />
+							<s>between sentences.</s></speak>`,
+					ssml: true,
+				}}
+			/>
+			<Composition
+				id="Splash"
+				component={Splash}
+				durationInFrames={SPLASH_DURATION_S*videoProps.fps}
+				{...videoProps}
+				defaultProps={{
+					duration: SPLASH_DURATION_S*videoProps.fps,
+				}}
+			/>
+			<Composition
+				id="Slides"
+				component={Slides}
+				durationInFrames={2000}
+				{...videoProps}
+				defaultProps={{
+					script: [
+						INTRO,
+						makeEnding('the never ending')
+					],
+				}}
+			/>
+			<Composition
+				id="Episode"
+				component={Episode}
+				durationInFrames={9999}
+				{...videoProps}
+				defaultProps={{
+					script: [
+						{
+							script: [
+								{
+									text: `Episode 01`,
+									textToSpeech: [
+										'Welcome to the first episode of the work in progress by twopack.gallery',
+									],
+								},
+								{
+									title: `WIP Ep 01`,
+									text: `remotion`,
+									textToSpeech: [
+										'In this episode I will try remotion to create the speaking head animation',
+										'You can see its already working in the bottom-right corner of your video',
+										"Let's see how it goes",
+									],
+								},
+							],
+						},
+						{
+							textToSpeech: [
+								{
+									from: 300,
+									text: [
+										`It's my first time trying remotion`,
+										0.25,
+										`First time I heard of it was this summer, at one react conference`,
+									],
+								},
+								{
+									from: 900,
+									text: [
+										`SECOND CUT`,
+										0.25,
+									],
+								},
+								{
+									from: 3000,
+									text: [
+										`THIRD CUT`,
+										0.25,
+									],
+								},
+								{
+									from: 9000,
+									text: [
+										`FINAL CUT`,
+										2,
+									],
+								},
+							],
+							videoClip: '01/01.mov',
+							durationInSeconds:  33 * 60 + 4,
+						},
+					],
+				}}
+			/>
+			<Composition
+				id="Blur"
+				component={Episode}
+				durationInFrames={videoProps.fps * (60 + 27)}
+				{...videoProps}
+				defaultProps={{
+					script: [
+						{
+							textToSpeech: [
+								{
+									from: 30,
+									text: [
+										`It's my first time trying remotion`,
+										0.25,
+										`First time I heard of it was this summer, at one react conference`,
+									],
+								},
+							],
+							videoClip: '01/01.mov',
+							durationInSeconds: 1 * 60 + 27,
+							playbackRate: 1.2,
+							startFrom: 900,
+							endAt: 300 + 30 * (1 * 60 + 27),
+							blur: [
+								{
+									frames: [10, 30 * (1 * 60 + 27)],
+									blurProps: {
+										style: {
+											width: '30%',
+											height: '30%',
+											top: '10vh',
+											left: '3vw',
+										},
+									},
+								},
+							],
+						},
+					],
+				}}
+			/>
+			<Composition
+				id="TrailerEp"
+				component={Trailer}
+				durationInFrames={1849}
+				{...videoProps}
+			/>
+			<Composition
+				id="Preview0101"
+				component={ClipPreview}
+				durationInFrames={2494}
+				{...videoProps}
+				defaultProps={{
+					src: staticFile('01/01.mov')
+				}}
+			/>
+			<Composition
+				id="ClipExport0101"
+				component={ClipExport}
+				durationInFrames={(33 * 60 + 4)*videoProps.fps}
+				{...videoProps}
+				defaultProps={{
+					src: staticFile('01/01.mov')
+				}}
+			/>
+			<Composition
+				id="Ep01"
+				component={Ep01}
+				durationInFrames={3144}
+				{...videoProps}
 			/>
 		</>
 	);
