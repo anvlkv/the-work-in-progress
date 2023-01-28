@@ -2,7 +2,7 @@ import React from 'react';
 import {
 	AbsoluteFill,
 	interpolate,
-	OffthreadVideo,
+	Video,
 	Sequence,
 	useCurrentFrame,
 	useVideoConfig,
@@ -32,11 +32,12 @@ export const AcceleratedVideo: React.FC<
 	return (
 		<>
 			<Sequence from={frame}>
-				<OffthreadVideo
+				<Video
 					{...videoProps}
 					src={videoProps.src}
 					startFrom={Math.round(remappedFrame)}
 					playbackRate={speedFunction(frame)}
+          imageFormat="jpeg"
 				/>
 			</Sequence>
 			<AbsoluteFill

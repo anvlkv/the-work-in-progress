@@ -10,7 +10,7 @@
     "test": "eslint src --ext ts,tsx,js,jsx && tsc"
   },
   "repository": "https://github.com/anvlkv/the-work-in-progress.git",
-  "license": "CC-BY-NC-SA",
+  "license": "CC-BY-NC-SA-4.0",
   "devDependencies": {
     "@remotion/eslint-config": "^3.0.0",
     "@types/react": "^18.0.26",
