@@ -1,5 +1,4 @@
 import {Sequence, useVideoConfig} from 'remotion';
-import { phrasesToSpeech } from './phrasesToSpeech';
 import {PresentationClip} from './PresentationClip';
 
 const CHARACTER_SPEECH_DURATION = 0.0667;
@@ -30,10 +29,9 @@ export const Slides: React.FC<Props> = ({script = []}) => {
 				durationInFrames={sequenceDuration}
 			>
 				<PresentationClip
-					ssml
 					text={text}
 					title={title}
-					textToSpeech={phrasesToSpeech(textToSpeech)}
+					textToSpeech={textToSpeech}
 				/>
 			</Sequence>
 		);
@@ -42,12 +40,10 @@ export const Slides: React.FC<Props> = ({script = []}) => {
 	}
 	const slides = script.map(renderSequence)
 
-	// console.log('slide', 'duration', from)
-
 	return <>{slides}</>;
 };
 
-function durationFromText(text: (string | number)[], fps: number) {
+export function durationFromText(text: (string | number)[], fps: number) {
 	const result = Math.ceil(
 		text.reduce<number>((acc, current) => {
 			return (

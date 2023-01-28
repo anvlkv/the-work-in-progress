@@ -1,7 +1,7 @@
 import {Sequence, useVideoConfig} from 'remotion';
-import {SPLASH_DURATION_S} from '../../constants';
-import {Slides, Props, durationFromProps} from '../../Slides';
-import {Splash} from '../../Splash';
+import {SPLASH_DURATION_S} from '../constants';
+import {Slides, Props, durationFromProps} from '../Slides';
+import {Splash} from '../Splash';
 
 const trailerScript: Props['script'] = [
 	{

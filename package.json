@@ -1,16 +1,16 @@
 {
   "name": "the-work-in-progress",
   "version": "1.0.0",
-  "description": "My Remotion video",
+  "description": "the work in progress by twopack.gallery",
   "scripts": {
     "start": "remotion preview",
     "upgrade": "remotion upgrade",
-    "render": "wrap () { remotion render \"$*\" out/\"$*\".webm --codec=vp8 --bundle-cache=false --enable-lip | cat; }; wrap",
+    "render": "wrap () { remotion render \"$*\" out/\"$*\".mp4 --bundle-cache=false --enable-lip | cat; }; wrap",
     "convert": "sh convertDir.sh",
     "test": "eslint src --ext ts,tsx,js,jsx && tsc"
   },
-  "repository": {},
-  "license": "UNLICENSED",
+  "repository": "https://github.com/anvlkv/the-work-in-progress.git",
+  "license": "CC-BY-NC-SA",
   "devDependencies": {
     "@remotion/eslint-config": "^3.0.0",
     "@types/react": "^18.0.26",

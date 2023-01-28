@@ -1,5 +1,5 @@
-import {Episode, Props} from '../../Episode';
-import {INTRO, makeEnding, makePomodoro} from '../constants';
+import {Episode, Props} from '../Episode';
+import {INTRO, makeEnding, makePomodoro} from './constants';
 
 const script: Props['script'] = [
 	{
@@ -12,7 +12,7 @@ const script: Props['script'] = [
 				],
 			},
 			INTRO,
-			makePomodoro(7, 'seven'),
+			makePomodoro(8, 'eight'),
 			{
 				title: `WIP Ep 01`,
 				text: `POC: remotion`,
@@ -31,48 +31,40 @@ const script: Props['script'] = [
 	},
 	{
 		textToSpeech: [
-			{
-				from: 30,
-				text: [
-					0.5,
-					`It's my first time trying remotion`,
-					0.25,
-					`I heard of it was this summer, at one react conference`,
-				],
-			},
+			{from : 0 , text: [
+				.5,
+				'says something...'
+			]}
 		],
-		videoClip: '01/01.mov',
-		durationInSeconds: 33 * 60 + 4,
+		videoClip: '01/01.webm',
 	},
 	{
 		textToSpeech: [],
-		videoClip: '01/02.mov',
-		durationInSeconds: 15 * 60 + 39,
+		videoClip: '01/02.webm',
 	},
 	{
 		textToSpeech: [],
-		videoClip: '01/03.mov',
-		durationInSeconds: 43 * 60 + 31,
+		videoClip: '01/03.webm',
 	},
 	{
 		textToSpeech: [],
-		videoClip: '01/04.mov',
-		durationInSeconds: 11 * 60 + 59,
+		videoClip: '01/04.webm',
 	},
 	{
 		textToSpeech: [],
-		videoClip: '01/05.mov',
-		durationInSeconds: 31 * 60 + 50,
+		videoClip: '01/05.webm',
 	},
 	{
 		textToSpeech: [],
-		videoClip: '01/06.mov',
-		durationInSeconds: 1 * 60 * 60 + 39 * 60 + 2,
+		videoClip: '01/06.webm',
 	},
 	{
 		textToSpeech: [],
-		videoClip: '01/07.mov',
-		durationInSeconds: 5 * 60 + 32,
+		videoClip: '01/07.webm',
+	},
+	{
+		textToSpeech: [],
+		videoClip: '01/08.webm',
 	},
 	{
 		script: [makeEnding('first')],

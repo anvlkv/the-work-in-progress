@@ -1,3 +1,5 @@
+import { VIDEO_CONFIG } from "../constants"
+
 export const makeEnding = (ep: string) => ({
   title:'Thank you!',
   text: 'Sincerely yours twopack.gallery',
@@ -55,3 +57,5 @@ export const makePomodoro = (sessions: number, speakSessions: string) => ({
     `Recording of this episodes took ${speakSessions} sessions`,
   ]
 })
+
+export const EP_DURATION_FRAMES = VIDEO_CONFIG.fps * 42 * 60 

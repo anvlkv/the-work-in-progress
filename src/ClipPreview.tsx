@@ -15,7 +15,7 @@ export const ClipPreview: React.FC<{src: string}> = ({
 	const {fps} = useVideoConfig();
 	return (
 		<AbsoluteFill style={{width: '100%', height: '100%', display: 'block', fontSize: '2.5em'}}>
-			<OffthreadVideo muted src={src} />
+			<OffthreadVideo muted src={src} style={{width: '100%', height: '100%'}} />
       <Audio src={src}/>
 			<AbsoluteFill
 				style={{

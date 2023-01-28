@@ -4,7 +4,7 @@ export const phrasesToSpeech = (textToSpeech: (string | number)[]) => {
 		return `${acc} ${
 			typeof current === 'string'
 				? `<s>${current}</s>`
-				: `<break time="${current}s"/>`
+				:  `<break time="${current}s"/>`
 		}`;
 	}, '')}
   </speech>`;
