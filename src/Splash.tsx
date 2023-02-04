@@ -1,5 +1,5 @@
 import {AbsoluteFill, interpolate, staticFile, useCurrentFrame} from 'remotion';
-import {COLOR_1} from './constants';
+import {COLOR_1, COLOR_3} from './constants';
 
 const MAX_SCALE = 4;
 export const Splash: React.FC<{duration: number}> = ({duration}) => {
@@ -20,7 +20,7 @@ export const Splash: React.FC<{duration: number}> = ({duration}) => {
 			  );
 	const revScale = duration > 0 ? MAX_SCALE - scale : scale - MAX_SCALE;
 	return (
-		<AbsoluteFill style={{width: '100%', height: '100%'}}>
+		<AbsoluteFill style={{width: '100%', height: '100%', backgroundColor: COLOR_3}}>
 			<svg
 				width="100%"
 				height="100%"

@@ -1,13 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import {
-	AbsoluteFill,
 	interpolate,
 	Video,
 	Sequence,
 	useCurrentFrame,
-	useVideoConfig,
 } from 'remotion';
-import {COLOR_1, COLOR_2} from './constants';
 
 const remapSpeed = (frame: number, speed: (fr: number) => number) => {
 	let framesPassed = 0;
@@ -16,19 +13,20 @@ const remapSpeed = (frame: number, speed: (fr: number) => number) => {
 	}
 	return framesPassed;
 };
+
 export const AcceleratedVideo: React.FC<
-	Omit<VideoProps, 'playbackRate'> & {
-		inputRange: number[];
-		outputRange: number[];
-	}
-> = ({inputRange, outputRange, ...videoProps}) => {
-	const {fps} = useVideoConfig();
+	React.PropsWithChildren<
+		Omit<VideoProps, 'playbackRate'> & {
+			inputRange: number[];
+			outputRange: number[];
+		}
+	>
+> = ({inputRange, outputRange, children, ...videoProps}) => {
 	const frame = useCurrentFrame();
 	const speedFunction = (f: number) => interpolate(f, inputRange, outputRange);
 	const remappedFrame =
 		remapSpeed(frame, speedFunction) + (videoProps.startFrom || 0);
 
-	const remappedTime = new Date(Math.round((remappedFrame / fps) * 1000));
 	return (
 		<>
 			<Sequence from={frame}>
@@ -36,27 +34,20 @@ export const AcceleratedVideo: React.FC<
 					{...videoProps}
 					src={videoProps.src}
 					startFrom={Math.round(remappedFrame)}
-					playbackRate={speedFunction(frame)}
-          imageFormat="jpeg"
+					playbackRate={Math.min(speedFunction(frame), 16)}
 				/>
+				<AcceleratedContext.Provider value={{remappedFrame}}>
+					{children}
+				</AcceleratedContext.Provider>
 			</Sequence>
-			<AbsoluteFill
-				style={{
-					width: 'max-content',
-					height: 'max-content',
-					flexShrink: 1,
-					padding: '2%',
-					backgroundColor: COLOR_1,
-					color: COLOR_2,
-					fontSize: '3em',
-				}}
-			>
-				<p>frame: {Math.round(remappedFrame)}</p>
-				<p>
-					time: {remappedTime.getHours()-1}:{remappedTime.getMinutes()}:
-					{remappedTime.getSeconds()}.{remappedTime.getMilliseconds()}
-				</p>
-			</AbsoluteFill>
 		</>
 	);
 };
+
+const AcceleratedContext = React.createContext({
+	remappedFrame: 0,
+});
+
+export function useRemappedFrame() {
+	return useContext(AcceleratedContext).remappedFrame
+}

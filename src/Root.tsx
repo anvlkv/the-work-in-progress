@@ -25,7 +25,8 @@ export const RemotionRoot: React.FC = () => {
 				// You can override these props for each render:
 				// https://www.remotion.dev/docs/parametrized-rendering
 				defaultProps={{
-					videoClip: 'sample.mp4',
+					videoClipSrc: 'sample.mp4',
+					accelerate: 2
 				}}
 			/>
 			<Composition
@@ -38,7 +39,7 @@ export const RemotionRoot: React.FC = () => {
 				// You can override these props for each render:
 				// https://www.remotion.dev/docs/parametrized-rendering
 				defaultProps={{
-					videoClip: 'sample.mp4',
+					videoClipSrc: 'sample.mp4',
 					textToSpeech: [
 						{
 							from: 60,
@@ -55,7 +56,8 @@ export const RemotionRoot: React.FC = () => {
 								0.25,
 							],
 						},
-					]
+					],
+					accelerate: 2
 				}}
 			/>
 			<Composition
@@ -79,6 +81,17 @@ export const RemotionRoot: React.FC = () => {
 					- what to expect?
 					- how to support?
 					`,
+					textToSpeech:
+						['This is a presentation clip of the work in progress by twopack.gallery'],
+				}}
+			/>
+			<Composition
+				id="PresentationClipWithImage"
+				component={PresentationClip}
+				durationInFrames={VIDEO_CONFIG.fps * (1 + 27)}
+				{...VIDEO_CONFIG}
+				defaultProps={{
+					img: staticFile('sample.png'),
 					textToSpeech:
 						['This is a presentation clip of the work in progress by twopack.gallery'],
 				}}
@@ -175,11 +188,11 @@ export const RemotionRoot: React.FC = () => {
 									],
 								},
 							],
-							videoClip: '01/01.webm',
+							videoClipSrc: '01/01.webm',
 						},
 						{
 							textToSpeech: [],
-							videoClip: '01/02.webm'
+							videoClipSrc: '01/02.webm'
 						}
 					],
 				}}
@@ -202,8 +215,7 @@ export const RemotionRoot: React.FC = () => {
 									],
 								},
 							],
-							videoClip: '01/01.mov',
-							playbackRate: 1.2,
+							videoClipSrc: '01/01.mov',
 							startFrom: 900,
 							endAt: 300 + 30 * (1 * 60 + 27),
 							blur: [
@@ -226,16 +238,52 @@ export const RemotionRoot: React.FC = () => {
 			<Composition
 				id="TrailerEp"
 				component={Trailer}
-				durationInFrames={1849}
+				durationInFrames={2140}
 				{...VIDEO_CONFIG}
 			/>
 			<Composition
-				id="Preview0101"
+				id="Preview0104"
 				component={ClipPreview}
-				durationInFrames={2494}
+				durationInFrames={EP_DURATION_FRAMES}
 				{...VIDEO_CONFIG}
 				defaultProps={{
-					src: staticFile('01/01.webm')
+					src: staticFile('01/04.webm')
+				}}
+			/>
+			<Composition
+				id="Preview0105"
+				component={ClipPreview}
+				durationInFrames={EP_DURATION_FRAMES}
+				{...VIDEO_CONFIG}
+				defaultProps={{
+					src: staticFile('01/05.webm')
+				}}
+			/>
+			<Composition
+				id="Preview0106"
+				component={ClipPreview}
+				durationInFrames={EP_DURATION_FRAMES}
+				{...VIDEO_CONFIG}
+				defaultProps={{
+					src: staticFile('01/06.webm')
+				}}
+			/>
+			<Composition
+				id="Preview0107"
+				component={ClipPreview}
+				durationInFrames={EP_DURATION_FRAMES}
+				{...VIDEO_CONFIG}
+				defaultProps={{
+					src: staticFile('01/07.webm')
+				}}
+			/>
+			<Composition
+				id="Preview0108"
+				component={ClipPreview}
+				durationInFrames={EP_DURATION_FRAMES}
+				{...VIDEO_CONFIG}
+				defaultProps={{
+					src: staticFile('01/08.webm')
 				}}
 			/>
 			<Composition

@@ -1,22 +1,20 @@
-import {getVideoMetadata, VideoMetadata} from '@remotion/media-utils';
-import React, {useLayoutEffect, useMemo, useState} from 'react';
+import {VideoMetadata, getVideoMetadata} from '@remotion/media-utils';
+import React, {useLayoutEffect, useState} from 'react';
 import {
 	Sequence,
 	staticFile,
 	useVideoConfig,
-	useCurrentFrame,
-	delayRender,
-	continueRender,
 	Loop,
+	Video,
+	continueRender,
+	delayRender,
 } from 'remotion';
 import {AbsoluteFill} from 'remotion';
 import {AcceleratedVideo} from './AcceleratedVideo';
 import {COLOR_2, COLOR_3} from './constants';
 import {SpeakingHead} from './Head/SpeakingHead';
-import { TalkingHead } from './Head/TalkingHead';
 import {TiltingHead} from './Head/TiltingHead';
-import {phrasesToSpeech} from './phrasesToSpeech';
-import {durationFromText} from './Slides';
+import {phrasesToSpeech, durationFromText} from './phrasesToSpeech';
 
 // eslint-disable-next-line react/no-unused-prop-types
 type SequenceRenderProps = {text: (string | number)[]; from: number};
@@ -27,25 +25,119 @@ type BlurProps = {
 };
 
 export type Props = {
-	videoClip: string;
+	videoClipSrc: string;
+	accelerate: number;
 	textToSpeech?: SequenceRenderProps[];
 	startFrom?: number;
 	endAt?: number;
-	playbackRate?: number;
-	volume?: number | ((frame: number) => number);
-	blur?: BlurProps[];
 	style?: React.CSSProperties;
-	imageFormat?: 'jpeg' | 'png';
+	blur?: BlurProps[];
+	muted?: boolean;
+	volume?: number | ((f: number)=> number)
 };
-export const VideoClip: React.FC<Props> = ({
-	videoClip,
+
+type InternalProps = Omit<
+	Props,
+	'textToSpeech' | 'videoClipSrc' | 'blur' | 'accelerate'
+>;
+
+type VideoClipWithSpeechProps = InternalProps & {
+	textToSpeech: (string | number)[];
+	from: number;
+	startFrom: number;
+	src: string;
+	duration: number;
+};
+
+type VideoClipWithoutSpeechProps = InternalProps & {
+	from: number;
+	startFrom: number;
+	src: string;
+	duration: number;
+	accelerate: number;
+};
+
+const VideoClipWithSpeech: React.FC<
+	React.PropsWithChildren<VideoClipWithSpeechProps>
+> = ({from, textToSpeech, duration, ...videoProps}) => {
+	const {fps} = useVideoConfig();
+
+	return (
+		<Sequence durationInFrames={duration} from={from}>
+			<Video {...videoProps} />
+			<AbsoluteFill
+				style={{
+					backgroundColor: COLOR_2,
+					width: '20%',
+					height: '25%',
+					position: 'absolute',
+					bottom: 0,
+					right: 0,
+					top: 'unset',
+					left: 'unset',
+				}}
+			>
+				{typeof textToSpeech[0] === 'number' ? (
+					<>
+						<Sequence durationInFrames={textToSpeech[0] * fps}>
+							<TiltingHead />
+						</Sequence>
+						<Sequence from={textToSpeech[0] * fps}>
+							<SpeakingHead
+								ssml
+								text={phrasesToSpeech(textToSpeech.slice(1))}
+							/>
+						</Sequence>
+					</>
+				) : (
+					<SpeakingHead ssml text={phrasesToSpeech(textToSpeech)} />
+				)}
+			</AbsoluteFill>
+		</Sequence>
+	);
+};
+
+const VideoClipWithoutSpeech: React.FC<
+	React.PropsWithChildren<VideoClipWithoutSpeechProps>
+> = ({from, duration, accelerate, ...videoProps}) => {
+	const {fps} = useVideoConfig();
+
+	return (
+		<Sequence durationInFrames={duration} from={from}>
+			<AcceleratedVideo
+				inputRange={[0, duration]}
+				outputRange={[1, accelerate]}
+				{...videoProps}
+			/>
+			<AbsoluteFill
+				style={{
+					backgroundColor: COLOR_2,
+					width: '20%',
+					height: '25%',
+					position: 'absolute',
+					bottom: 0,
+					right: 0,
+					top: 'unset',
+					left: 'unset',
+				}}
+			>
+				<Loop durationInFrames={60 * fps}>
+					<TiltingHead />
+				</Loop>
+			</AbsoluteFill>
+		</Sequence>
+	);
+};
+
+export const VideoClip: React.FC<React.PropsWithChildren<Props>> = ({
+	videoClipSrc,
 	textToSpeech = [],
+	accelerate,
 	blur,
 	...videoProps
 }) => {
 	const {fps, durationInFrames: targetDuration} = useVideoConfig();
-	// Const frame = useCurrentFrame();
-	const src = staticFile(videoClip);
+	const src = staticFile(videoClipSrc);
 	const [srcMeta, setSrcMeta] = useState<null | VideoMetadata>(null);
 	const [handle] = useState(() => delayRender());
 
@@ -56,135 +148,82 @@ export const VideoClip: React.FC<Props> = ({
 		})();
 	}, [src, handle]);
 
-	const [inputRange, outputRange, ttsSequence] = useMemo(() => {
-		if (!srcMeta) {
-			return [[], [], null] as [
-				number[],
-				number[],
-				null | React.ReactElement[]
-			];
-		}
-		const totalVideoDurationInFrames = srcMeta.durationInSeconds * fps;
-		const durations = textToSpeech.map((txt) => {
-			return durationFromText(txt.text, fps);
-		});
-		const ttsDuration = durations.reduce((acc, d) => acc + d, 0);
-		const targetPlaybackRate =
-			ttsDuration > totalVideoDurationInFrames
-				? ttsDuration / targetDuration
-				: (totalVideoDurationInFrames + ttsDuration) / targetDuration;
-		const inputRange = [0, targetDuration];
-		const outputRange = [targetPlaybackRate, targetPlaybackRate];
-		const sequenceEntries: React.ReactElement[] = [];
-		textToSpeech.forEach((txt, at) => {
-			const duration = durations[at];
-			const fromFrame = Math.round(txt.from / targetPlaybackRate);
-			const previousSpeechEndFrame = inputRange[inputRange.length - 2];
-			
-			// TODO: make it work with slowing down
-			if (previousSpeechEndFrame === fromFrame) {
-				inputRange.splice(inputRange.length - 1, 0, fromFrame + duration);
-				outputRange.splice(outputRange.length - 2, 1, 1, 1);
-			}
-			else {
-				sequenceEntries.push(
-					<Sequence
-						key={`${at}_tiltingHead`}
-						from={previousSpeechEndFrame}
-						durationInFrames={fromFrame - previousSpeechEndFrame}
-					>
-						<Loop durationInFrames={60*fps}>
-							<TiltingHead />
-						</Loop>
-					</Sequence>
-				);
-				inputRange.splice(inputRange.length - 1, 0, fromFrame);
-				inputRange.splice(inputRange.length - 1, 0, fromFrame + duration);
-				outputRange.splice(outputRange.length - 1, 0, 1, 1);
-			}
-			sequenceEntries.push(
-				<Sequence
-					key={`${at}_${fromFrame}`}
-					from={fromFrame}
-					durationInFrames={duration}
-				>
-					{typeof txt.text[0] === 'number' ? (
-						<>
-							<Sequence durationInFrames={txt.text[0] * fps}>
-								<TiltingHead />
-							</Sequence>
-							<Sequence from={txt.text[0] * fps}>
-								<SpeakingHead ssml text={phrasesToSpeech(txt.text.slice(1))} />
-							</Sequence>
-						</>
-					) : (
-						<SpeakingHead ssml text={phrasesToSpeech(txt.text)} />
-					)}
-				</Sequence>
-			);
-		});
-
-		const endingDuration =
-			inputRange[inputRange.length - 1] - inputRange[inputRange.length - 2];
-		if (sequenceEntries.length && endingDuration) {
-			sequenceEntries.push(
-				<Sequence
-					key="final_tiltingHead"
-					from={inputRange[inputRange.length - 2]}
-				>
-					<Loop durationInFrames={60*fps}>
-						<TiltingHead />
-					</Loop>
-				</Sequence>
-			);
-		}
-
-		return [
-			inputRange,
-			outputRange,
-			sequenceEntries.length ? sequenceEntries : null,
-		];
-	}, [srcMeta, targetDuration, fps, textToSpeech]);
-
 	if (!srcMeta) {
 		return null;
 	}
 
 	return (
 		<AbsoluteFill style={{backgroundColor: COLOR_3}} title={src}>
-			<AcceleratedVideo
-				muted={ttsSequence}
-				src={src}
-				{...videoProps}
-				inputRange={inputRange}
-				outputRange={outputRange}
-			/>
-			<AbsoluteFill
-				style={{
-					backgroundColor: COLOR_2,
-					width: '20%',
-					height: '25%',
-					position: 'absolute',
-					bottom: '3%',
-					right: 0,
-					top: 'unset',
-					left: 'unset',
-				}}
-			>
-				{ttsSequence ? ttsSequence : <TalkingHead fileName={src} />}
-			</AbsoluteFill>
-			{/* blur &&
-					blur.map(({frames: [from, to], blurProps}, at) => {
-						return (
-							<Sequence
-								key={`${from}_${to}_${at}`}
-								from={from}
-								durationInFrames={to - from}
-							>
-								<Blur {...blurProps} />
-							</Sequence>
+			{textToSpeech.length ? (
+				textToSpeech.reduce(
+					(acc, tts, at, all) => {
+						const speechDuration = durationFromText(tts.text, fps);
+						acc.clips.push(
+							<VideoClipWithSpeech
+								key={`${at}_${tts.from}`}
+								{...videoProps}
+								src={src}
+								from={acc.from}
+								textToSpeech={tts.text}
+								startFrom={tts.from}
+								duration={speechDuration}
+							/>
 						);
-					}) */}
+						acc.from += speechDuration;
+						const next = all[at + 1];
+						const diff =
+							(next
+								? next.from
+								: videoProps.endAt
+								? videoProps.endAt
+								: srcMeta.durationInSeconds * fps) -
+							(tts.from + speechDuration);
+						const acceleratedDuration = Math.ceil(diff / accelerate);
+						acc.clips.push(
+							<VideoClipWithoutSpeech
+								key={`${at}_${tts.from}_accelerated`}
+								{...videoProps}
+								src={src}
+								from={acc.from + speechDuration}
+								startFrom={tts.from + speechDuration}
+								duration={acceleratedDuration}
+								accelerate={accelerate}
+							/>
+						);
+						acc.from += acceleratedDuration;
+
+						return acc;
+					},
+					(textToSpeech.length && textToSpeech[0].from > 0
+						? {
+								clips: [
+									<VideoClipWithoutSpeech
+										key={`before_${textToSpeech[0].from}`}
+										{...videoProps}
+										src={src}
+										from={0}
+										startFrom={videoProps.startFrom || 0}
+										duration={Math.ceil(textToSpeech[0].from / accelerate)}
+										accelerate={accelerate}
+									/>,
+								],
+								from: textToSpeech[0].from,
+						  }
+						: {clips: [], from: 0}) as {
+						clips: React.ReactElement[];
+						from: number;
+					}
+				).clips
+			) : (
+				<VideoClipWithoutSpeech
+					{...videoProps}
+					src={src}
+					from={0}
+					startFrom={videoProps.startFrom || 0}
+					duration={targetDuration}
+					accelerate={accelerate}
+				/>
+			)}
 		</AbsoluteFill>
 	);
 };

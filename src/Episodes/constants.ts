@@ -4,11 +4,10 @@ export const makeEnding = (ep: string) => ({
   title:'Thank you!',
   text: 'Sincerely yours twopack.gallery',
   textToSpeech: [
-    '',
-    .25,
+    2,
     'A-a-and cut!',
     .25,
-    `Thank you for watching ${ep} episode of the work in progress by two pack dot gallery`,
+    `Thank you for watching the ${ep} episode of the work in progress by two pack dot gallery`,
     .25,
     'I hope you enjoyed it',
     .25,
@@ -23,7 +22,7 @@ export const INTRO = {
     - creative process
     - no adds
     - not a record of best practices
-    - CC-BY-NC-SA
+    - CC-BY-NC-SA 4.0
   `,
   textToSpeech: [
     '',
@@ -34,7 +33,7 @@ export const INTRO = {
     .25,
     'This recording is not intended as source of best practices',
     .25,
-    'This podcast is distributed under Creative Commons Requires attribution Non-commercial Share alike license CC-BY-NC-SA, and is produced by two pack dot gallery'
+    'This podcast is distributed under Creative Commons Requires attribution Non-commercial Share alike license CC-BY-NC-SA four point zero, and is produced by two pack dot gallery'
   ]
 }
 

@@ -1,12 +1,12 @@
 import {Sequence, useVideoConfig} from 'remotion';
 import {SPLASH_DURATION_S} from '../constants';
-import {Slides, Props, durationFromProps} from '../Slides';
+import { durationFromProps } from '../phrasesToSpeech';
+import {Slides, Props} from '../Slides';
 import {Splash} from '../Splash';
 
 const trailerScript: Props['script'] = [
 	{
 		textToSpeech: [
-			'',
 			.5,
 			`Welcome to the trailer episode of the work in progress by two pack dot gallery `,
 			.25,
@@ -15,46 +15,52 @@ const trailerScript: Props['script'] = [
 		],
 	},
 	{
+		title: 'why are we doing this?',
 		text: `
-      - why are we doing this?
+      - ungallery
+			- work in progress
     `,
 		textToSpeech: [
-			'',
 			.5,
 			`We are two artists creating an ungallery`,
 			.25,
 			`We are looking for community and support for the ungallery project through this podcast`,
 			.25,
-			`We will not use this channel to talk much about the gallery`,
+			`We will not use this channel to talk much about the ungallery`,
 			.25,
 			`Just gonna show the work in progress`,
 			.25,
 		],
 	},
 	{
+		title: 'what to expect?',
 		text: `
-      - why are we doing this?
-      - what to expect?
+       - creative process
+			 - free to watch
+			 - CC-BY-NC-SA 4.0
     `,
 		textToSpeech: [
-			'',
 			.5,
 			`You can expect to see our creative process in our episodes`,
 			.25,
 			`You can expect anything from textile art and stage design to painting and creative coding`,
 			.25,
 			`In the first episodes I will share the process of making this podcast and online experience for the ungallery project`,
+			.75,
+			'This podcast is available to you for free',
 			.25,
+			'The podcast is distributed under Creative Commons Requires attribution Non-commercial Share alike license CC-BY-NC-SA four point zero',
+			.25
 		],
 	},
 	{
+		title: 'how to support?',
 		text: `
-      - why are we doing this?
-      - what to expect?
-      - how to support?
+      - watch the podcast
+      - share your feedback
+      - support on patreon
     `,
 		textToSpeech: [
-			'',
 			.5,
 			`I most of all appreciate you watching the podcast`,
 			.25,

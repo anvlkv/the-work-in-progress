@@ -5,8 +5,8 @@
   "scripts": {
     "start": "remotion preview",
     "upgrade": "remotion upgrade",
-    "render": "wrap () { remotion render \"$*\" out/\"$*\".mp4 --bundle-cache=false --enable-lip | cat; }; wrap",
-    "convert": "sh convertDir.sh",
+    "render": "bash render.sh",
+    "convert": "bash convertDir.sh",
     "test": "eslint src --ext ts,tsx,js,jsx && tsc"
   },
   "repository": "https://github.com/anvlkv/the-work-in-progress.git",

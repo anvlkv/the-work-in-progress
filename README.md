@@ -25,13 +25,6 @@ yarn
 docker run -it -p 5500:5500 synesthesiam/opentts:en --cache
 ```
 
-**Convert source videos**
-
-```console
-ffmpeg -i public/01/01.mov -c:v libvpx-vp9 -b:v 0.5M -r 24 -threads 0 -c:a libopus -b:a 8k public/01/01.webm
-
-```
-
 **Start Preview**
 
 ```console
@@ -41,7 +34,7 @@ yarn start
 **Render video**
 
 ```console
-yarn build
+yarn render <CompositionId>
 ```
 
 **Upgrade Remotion**

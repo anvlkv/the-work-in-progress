@@ -8,8 +8,9 @@ dest=$2
 
 # loop through all .* files in the directory
 for file in $dir/*.*; do
-    # get the file name without the extension
-    filename=$(basename "$file" .mov)
-    # use ffmpeg to convert and compress the file
-    ffmpeg -i "$file" -r 24  "$dest/$filename.mp4"
+    echo "file '$file'" >> .mediaImports;
 done
+
+ffmpeg -f concat -safe 0 -i .mediaImports -c copy -map 0 -segment_time 00:03:00 -f segment -reset_timestamps 1 "$dest/%d.mp4"
+
+rm .mediaImports

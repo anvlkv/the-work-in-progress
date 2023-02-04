@@ -1,5 +1,5 @@
-import {Episode, Props} from '../../Episode';
-import {INTRO, makeEnding, makePomodoro} from '../constants';
+import {Episode, Props} from '../Episode';
+import {INTRO, makeEnding, makePomodoro} from './constants';
 
 const script: Props['script'] = [
 	{
@@ -41,38 +41,31 @@ const script: Props['script'] = [
 				],
 			},
 		],
-		videoClip: '02/01.webm',
-		durationInSeconds: 33 * 60 + 4,
+		videoClipSrc: '02/01.webm',
 	},
 	{
 		textToSpeech: [],
-		videoClip: '02/02.webm',
-		durationInSeconds: 15 * 60 + 39,
+		videoClipSrc: '02/02.webm',
 	},
 	{
 		textToSpeech: [],
-		videoClip: '02/03.webm',
-		durationInSeconds: 43 * 60 + 31,
+		videoClipSrc: '02/03.webm',
 	},
 	{
 		textToSpeech: [],
-		videoClip: '02/04.webm',
-		durationInSeconds: 11 * 60 + 59,
+		videoClipSrc: '02/04.webm',
 	},
 	{
 		textToSpeech: [],
-		videoClip: '02/05.webmm',
-		durationInSeconds: 31 * 60 + 50,
+		videoClipSrc: '02/05.webmm',
 	},
 	{
 		textToSpeech: [],
-		videoClip: '02/06.webm',
-		durationInSeconds: 1 * 60 * 60 + 39 * 60 + 2,
+		videoClipSrc: '02/06.webm',
 	},
 	{
 		textToSpeech: [],
-		videoClip: '02/07.webm',
-		durationInSeconds: 5 * 60 + 32,
+		videoClipSrc: '02/07.webm',
 	},
 	{
 		script: [makeEnding('second')],

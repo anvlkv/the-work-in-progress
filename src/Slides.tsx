@@ -1,8 +1,8 @@
 import {Sequence, useVideoConfig} from 'remotion';
+import { durationFromText } from './phrasesToSpeech';
 import {PresentationClip} from './PresentationClip';
 
-const CHARACTER_SPEECH_DURATION = 0.0667;
-const PAUSE_DURATION_S = 0.4;
+
 
 export type SequenceRenderProps = {
 	// eslint-disable-next-line react/no-unused-prop-types
@@ -38,28 +38,7 @@ export const Slides: React.FC<Props> = ({script = []}) => {
 		from += sequenceDuration;
 		return result;
 	}
-	const slides = script.map(renderSequence)
 
-	return <>{slides}</>;
+	return <>{script.map(renderSequence)}</>;
 };
 
-export function durationFromText(text: (string | number)[], fps: number) {
-	const result = Math.ceil(
-		text.reduce<number>((acc, current) => {
-			return (
-				acc +
-				(typeof current === 'string'
-					? current.length * CHARACTER_SPEECH_DURATION
-					: current * PAUSE_DURATION_S)
-			);
-		}, 0) * fps
-	);
-	return result;
-}
-
-export function durationFromProps({script}: Props, fps: number) {
-	return script.reduce(
-		(acc, slide) => acc + durationFromText(slide.textToSpeech, fps),
-		0
-	);
-}
