@@ -1,20 +1,16 @@
-import {Composition, staticFile} from 'remotion';
-import {Ep01} from './Episodes/Ep01';
-import {Episode} from './Episode';
-import {Trailer} from './Episodes/Trailer';
-import {SpeakingHead} from './Head/SpeakingHead';
-import {PresentationClip} from './PresentationClip';
-import {Slides} from './Slides';
-import {VideoClip} from './VideoClip';
-import {Splash} from './Splash';
-import { ClipPreview } from './ClipPreview';
-import { EP_DURATION_FRAMES, INTRO, makeEnding } from './Episodes/constants';
-import { SPLASH_DURATION_S, VIDEO_CONFIG } from './constants';
-// Each <Composition> is an entry in the sidebar!
+import {Folder, Composition, staticFile} from 'remotion';
+import {VIDEO_CONFIG, SPLASH_DURATION_S} from '../constants';
+import {Episode} from '../Episode';
+import {INTRO, makeEnding, EP_DURATION_FRAMES} from '../Episodes/constants';
+import {SpeakingHead} from '../Head/SpeakingHead';
+import {PresentationClip} from '../PresentationClip';
+import {Slides} from '../Slides';
+import {Splash} from '../Splash';
+import {VideoClip} from '../Video/VideoClip';
 
-export const RemotionRoot: React.FC = () => {
+export const Components = () => {
 	return (
-		<>
+		<Folder name="Components">
 			<Composition
 				// You can take the "id" to render a video:
 				// npx remotion render src/index.ts <id> out/video.mp4
@@ -26,7 +22,8 @@ export const RemotionRoot: React.FC = () => {
 				// https://www.remotion.dev/docs/parametrized-rendering
 				defaultProps={{
 					videoClipSrc: 'sample.mp4',
-					accelerate: 2
+					accelerate: 2,
+          durationInSeconds: 203
 				}}
 			/>
 			<Composition
@@ -40,6 +37,7 @@ export const RemotionRoot: React.FC = () => {
 				// https://www.remotion.dev/docs/parametrized-rendering
 				defaultProps={{
 					videoClipSrc: 'sample.mp4',
+          durationInSeconds: 203,
 					textToSpeech: [
 						{
 							from: 60,
@@ -51,13 +49,10 @@ export const RemotionRoot: React.FC = () => {
 						},
 						{
 							from: 1400,
-							text: [
-								`SECOND CUT`,
-								0.25,
-							],
+							text: [`SECOND CUT`, 0.25],
 						},
 					],
-					accelerate: 2
+					accelerate: 2,
 				}}
 			/>
 			<Composition
@@ -66,8 +61,10 @@ export const RemotionRoot: React.FC = () => {
 				durationInFrames={VIDEO_CONFIG.fps * (1 + 27)}
 				{...VIDEO_CONFIG}
 				defaultProps={{
-					textToSpeech:
-						[.5, 'This is a presentation clip of the work in progress by twopack.gallery',]
+					textToSpeech: [
+						0.5,
+						'This is a presentation clip of the work in progress by twopack.gallery',
+					],
 				}}
 			/>
 			<Composition
@@ -77,12 +74,13 @@ export const RemotionRoot: React.FC = () => {
 				{...VIDEO_CONFIG}
 				defaultProps={{
 					text: `
-					- why are we doing this?
-					- what to expect?
-					- how to support?
-					`,
-					textToSpeech:
-						['This is a presentation clip of the work in progress by twopack.gallery'],
+    - why are we doing this?
+    - what to expect?
+    - how to support?
+    `,
+					textToSpeech: [
+						'This is a presentation clip of the work in progress by twopack.gallery',
+					],
 				}}
 			/>
 			<Composition
@@ -92,8 +90,9 @@ export const RemotionRoot: React.FC = () => {
 				{...VIDEO_CONFIG}
 				defaultProps={{
 					img: staticFile('sample.png'),
-					textToSpeech:
-						['This is a presentation clip of the work in progress by twopack.gallery'],
+					textToSpeech: [
+						'This is a presentation clip of the work in progress by twopack.gallery',
+					],
 				}}
 			/>
 			<Composition
@@ -103,19 +102,19 @@ export const RemotionRoot: React.FC = () => {
 				{...VIDEO_CONFIG}
 				defaultProps={{
 					text: `<speak>
-					<s>Breaks are possible</s>
-							<break time="0.5s" />
-							<s>between sentences.</s></speak>`,
+    <s>Breaks are possible</s>
+        <break time="0.5s" />
+        <s>between sentences.</s></speak>`,
 					ssml: true,
 				}}
 			/>
 			<Composition
 				id="Splash"
 				component={Splash}
-				durationInFrames={SPLASH_DURATION_S*VIDEO_CONFIG.fps}
+				durationInFrames={SPLASH_DURATION_S * VIDEO_CONFIG.fps}
 				{...VIDEO_CONFIG}
 				defaultProps={{
-					duration: SPLASH_DURATION_S*VIDEO_CONFIG.fps,
+					duration: SPLASH_DURATION_S * VIDEO_CONFIG.fps,
 				}}
 			/>
 			<Composition
@@ -124,10 +123,7 @@ export const RemotionRoot: React.FC = () => {
 				durationInFrames={2000}
 				{...VIDEO_CONFIG}
 				defaultProps={{
-					script: [
-						INTRO,
-						makeEnding('the never ending')
-					],
+					script: [INTRO, makeEnding('the never ending')],
 				}}
 			/>
 			<Composition
@@ -168,32 +164,23 @@ export const RemotionRoot: React.FC = () => {
 								},
 								{
 									from: 9000,
-									text: [
-										`SECOND CUT`,
-										0.25,
-									],
+									text: [`SECOND CUT`, 0.25],
 								},
 								{
 									from: 13000,
-									text: [
-										`THIRD CUT`,
-										0.25,
-									],
+									text: [`THIRD CUT`, 0.25],
 								},
 								{
 									from: 19000,
-									text: [
-										`FINAL CUT`,
-										2,
-									],
+									text: [`FINAL CUT`, 2],
 								},
 							],
 							videoClipSrc: '01/01.webm',
 						},
 						{
 							textToSpeech: [],
-							videoClipSrc: '01/02.webm'
-						}
+							videoClipSrc: '01/02.webm',
+						},
 					],
 				}}
 			/>
@@ -235,63 +222,6 @@ export const RemotionRoot: React.FC = () => {
 					],
 				}}
 			/>
-			<Composition
-				id="TrailerEp"
-				component={Trailer}
-				durationInFrames={2140}
-				{...VIDEO_CONFIG}
-			/>
-			<Composition
-				id="Preview0104"
-				component={ClipPreview}
-				durationInFrames={EP_DURATION_FRAMES}
-				{...VIDEO_CONFIG}
-				defaultProps={{
-					src: staticFile('01/04.webm')
-				}}
-			/>
-			<Composition
-				id="Preview0105"
-				component={ClipPreview}
-				durationInFrames={EP_DURATION_FRAMES}
-				{...VIDEO_CONFIG}
-				defaultProps={{
-					src: staticFile('01/05.webm')
-				}}
-			/>
-			<Composition
-				id="Preview0106"
-				component={ClipPreview}
-				durationInFrames={EP_DURATION_FRAMES}
-				{...VIDEO_CONFIG}
-				defaultProps={{
-					src: staticFile('01/06.webm')
-				}}
-			/>
-			<Composition
-				id="Preview0107"
-				component={ClipPreview}
-				durationInFrames={EP_DURATION_FRAMES}
-				{...VIDEO_CONFIG}
-				defaultProps={{
-					src: staticFile('01/07.webm')
-				}}
-			/>
-			<Composition
-				id="Preview0108"
-				component={ClipPreview}
-				durationInFrames={EP_DURATION_FRAMES}
-				{...VIDEO_CONFIG}
-				defaultProps={{
-					src: staticFile('01/08.webm')
-				}}
-			/>
-			<Composition
-				id="Ep01"
-				component={Ep01}
-				durationInFrames={EP_DURATION_FRAMES}
-				{...VIDEO_CONFIG}
-			/>
-		</>
+		</Folder>
 	);
 };

@@ -1,5 +1,5 @@
 import {AbsoluteFill, useVideoConfig} from 'remotion';
-import {useRemappedFrame} from './AcceleratedVideo';
+import {useRemappedFrame} from './Video/AcceleratedVideo';
 import {COLOR_1, COLOR_2} from './constants';
 
 export const Clock: React.FC<{elapsedFrames: number}> = ({

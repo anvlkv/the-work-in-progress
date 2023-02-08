@@ -32,7 +32,6 @@ export const AcceleratedVideo: React.FC<
 			<Sequence from={frame}>
 				<Video
 					{...videoProps}
-					src={videoProps.src}
 					startFrom={Math.round(remappedFrame)}
 					playbackRate={Math.min(speedFunction(frame), 16)}
 				/>
@@ -44,7 +43,7 @@ export const AcceleratedVideo: React.FC<
 	);
 };
 
-const AcceleratedContext = React.createContext({
+export const AcceleratedContext = React.createContext({
 	remappedFrame: 0,
 });
 

@@ -1,5 +1,6 @@
 import {Episode, Props} from '../Episode';
-import {INTRO, makeEnding, makePomodoro} from './constants';
+import {INTRO, makeEnding, makePomodoro, WARNING} from './constants';
+
 
 const script: Props['script'] = [
 	{
@@ -11,10 +12,11 @@ const script: Props['script'] = [
 					'Welcome to the first episode of the work in progress by twopack.gallery',
 				],
 			},
+			WARNING,
 			INTRO,
 			{
-				title: `WIP Ep 01`,
-				text: `POC: remotion`,
+				title: `the WIP Ep 01`,
+				text: `POC: the speaking head animation with remotion`,
 				textToSpeech: [
 					0.5,
 					'In this episode I will make a proof of concept with remotion',
@@ -132,6 +134,13 @@ const script: Props['script'] = [
 			{from: 26332, text: ['See what came out']},
 			{from: 26664, text: ['Yay it is spinning']},
 			{from: 26900, text: ['Let us just work with that']},
+			{from: 33298, text: ['Try to keep the project organized along the way']},
+			{from: 33763, text: ['Clean up a little']},
+			{from: 34175, text: ['So, how am I going to do this?']},
+			{from: 33763, text: ['Clean up a little']},
+			{from: 34372, text: ['Time to do some research']},
+			{from: 35728, text: ['All the way till here']},
+			
 		],
 		videoClipSrc: '01/01.webm',
 	},
@@ -171,6 +180,8 @@ const script: Props['script'] = [
 				from: 12699,
 				text: ['Rearrange things a little, so that I rotate the entire head'],
 			},
+			{from: 16321, text: ['Looks almost good']},
+			{from: 16553, text: ['Nope, these were in degrees']},
 		],
 		videoClipSrc: '01/02.webm',
 	},
@@ -286,6 +297,14 @@ const script: Props['script'] = [
 				text: ['Ok that is little better but still not doing the full loop'],
 			},
 			{from: 35265, text: ['But enough on that']},
+			{from: 44048, text: ['Maybe using these options helps']},
+			{from: 45099, text: ['Yes, the duration in frames from the video config']},
+			{from: 45491, text: ['Ok, here it is tilting with a mouth on it']},
+			{from: 45678, text: ['How does one even make something like this?']},
+			{from: 46133, text: ['Suppose I can use different lip shapes']},
+			{from: 46235, text: ['Start with just opening and closing the mouth']},
+			{from: 46684, text: ['Assume a boolean prop for now']},
+			
 		],
 		videoClipSrc: '01/03.webm',
 	},
@@ -331,6 +350,7 @@ const script: Props['script'] = [
 					'And I should use the public directory instead when using static files',
 				],
 			},
+			{from: 14721, text: ['Alright, here is our video']},
 		],
 		videoClipSrc: '01/04.webm',
 		endAt: 14293,
@@ -466,6 +486,7 @@ const script: Props['script'] = [
 				from: 43717,
 				text: ['So it is a path d attribute', 'Let us pull up the docs', 0.5],
 			},
+			{from: 44627, text: ['Let us find those points here on the path']},
 			{from: 46121, text: ['I am looking at a path drawn with path commands']},
 			{
 				from: 46439,
@@ -474,8 +495,11 @@ const script: Props['script'] = [
 				],
 			},
 			{from: 48746, text: ['Split there and work with that']},
+			{from: 57864, text: ['So make it sixteen points']},
 			{from: 55059, text: ['Check what are the points of the cubic curve']},
 			{from: 59042, text: ['Format it to little bit more readable']},
+			{from: 69425, text: ['My little zen garden here']},
+			
 		],
 		videoClipSrc: '01/06.webm',
 	},
@@ -519,6 +543,9 @@ const script: Props['script'] = [
 				from: 35148,
 				text: ['Suppose that is one of the other sides of the mouth'],
 			},
+			{from: 43544, text: ['Looks sickening']},
+			{from: 44491, text: ['Smoothen-out the math']},
+			{from: 44903, text: ['That is too smooth for me right now']},
 		],
 		videoClipSrc: '01/07.webm',
 	},
@@ -563,4 +590,4 @@ const script: Props['script'] = [
 	},
 ];
 
-export const Ep01 = () => <Episode script={script} />;
+export const Ep01 = () => <Episode script={script} id="Episode 01"/>;

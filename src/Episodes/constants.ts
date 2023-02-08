@@ -4,9 +4,6 @@ export const makeEnding = (ep: string) => ({
   title:'Thank you!',
   text: 'Sincerely yours twopack.gallery',
   textToSpeech: [
-    2,
-    'A-a-and cut!',
-    .25,
     `Thank you for watching the ${ep} episode of the work in progress by two pack dot gallery`,
     .25,
     'I hope you enjoyed it',
@@ -21,7 +18,7 @@ export const INTRO = {
   text: `
     - creative process
     - no adds
-    - not a record of best practices
+    - no best practices
     - CC-BY-NC-SA 4.0
   `,
   textToSpeech: [
@@ -53,8 +50,15 @@ export const makePomodoro = (sessions: number, speakSessions: string) => ({
     .25,
     'Each break is five to fifteen minutes',
     .25,
-    `Recording of this episodes took ${speakSessions} sessions`,
+    `Recording of this episodes took approximately ${speakSessions} sessions`,
   ]
 })
+
+export const WARNING = {
+  title: 'WARNING:',
+  text: `This video may potentially trigger seizures for people with photosensitive epilepsy.
+  Viewer discretion is advised.`,
+  textToSpeech:['Safety first!', 'Viewer discretion is advised']
+}
 
 export const EP_DURATION_FRAMES = VIDEO_CONFIG.fps * 42 * 60 

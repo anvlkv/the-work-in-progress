@@ -6,52 +6,61 @@ import {
 	staticFile,
 	useVideoConfig,
 } from 'remotion';
-import {VideoClip, Props as VideoClipProps} from './VideoClip';
+import {VideoClip, Props as VideoClipProps} from './Video/VideoClip';
 import {Slides, Props as SlidesProps} from './Slides';
 import {COLOR_3, SPLASH_DURATION_S} from './constants';
 import {Splash} from './Splash';
 import {VideoMetadata, getVideoMetadata} from '@remotion/media-utils';
 import {Clock} from './Clock';
 import {durationFromText, durationFromProps} from './phrasesToSpeech';
+import {useLocalStorage} from 'react-use';
+import {ErrorWrapper} from './ErrorWrapper';
 
 // eslint-disable-next-line react/no-unused-prop-types
 export type SequenceRenderProps =
-	| Omit<VideoClipProps, 'accelerate'>
+	| Omit<VideoClipProps, 'accelerate' | 'durationInSeconds'>
 	| SlidesProps;
 
-export type Props = {script: SequenceRenderProps[]};
+export type Props = {script: SequenceRenderProps[]; id?: string};
 
 type Meta = (VideoMetadata & {scriptDuration: number}) | number;
 
-export const Episode = React.memo<Props>(({script}) => {
+export const Episode = React.memo<Props>(({script, id}) => {
 	const {fps, durationInFrames} = useVideoConfig();
-	const [scriptMeta, setScriptMeta] = useState<null | Meta[]>(null);
+	const [scriptMeta, setScriptMeta] = useLocalStorage<Meta[] | null>(
+		`meta_${id}`,
+		null
+	);
 	const [handle] = useState(() => delayRender());
 
 	useLayoutEffect(() => {
-		const meta = script.flatMap<Promise<Meta>>((s) =>
-			Object.prototype.hasOwnProperty.call(s, 'videoClipSrc')
-				? [
-						getVideoMetadata(
-							staticFile((s as VideoClipProps).videoClipSrc)
-						).then((d) => {
-							const text =
-								(s as VideoClipProps).textToSpeech?.flatMap((t) => t.text) ||
-								[];
-							const scriptDuration = durationFromText(text, fps);
-							return {
-								...d,
-								scriptDuration,
-							};
-						}),
-				  ]
-				: [Promise.resolve(durationFromProps(s as SlidesProps, fps))]
-		);
-		(async () => {
-			setScriptMeta(await Promise.all(meta));
+		if (scriptMeta) {
 			continueRender(handle);
-		})();
-	}, [script, handle, fps]);
+		} else {
+			const meta = script.flatMap<Promise<Meta>>((s) =>
+				Object.prototype.hasOwnProperty.call(s, 'videoClipSrc')
+					? [
+							getVideoMetadata(
+								staticFile((s as VideoClipProps).videoClipSrc)
+							).then((d) => {
+								const text =
+									(s as VideoClipProps).textToSpeech?.flatMap((t) => t.text) ||
+									[];
+								const scriptDuration = durationFromText(text, fps);
+								return {
+									...d,
+									scriptDuration,
+								};
+							}),
+					  ]
+					: [Promise.resolve(durationFromProps(s as SlidesProps, fps))]
+			);
+			(async () => {
+				setScriptMeta(await Promise.all(meta));
+				continueRender(handle);
+			})();
+		}
+	}, [script, handle, fps, setScriptMeta, scriptMeta]);
 
 	const clips = useMemo(() => {
 		if (!scriptMeta) {
@@ -104,8 +113,8 @@ export const Episode = React.memo<Props>(({script}) => {
 
 		const videoClipsDurationTarget =
 			totalClipsDurationTarget - totalSlidesDuration;
-		const accelerateVideo =
-			(totalVideoDurationInSeconds * fps) /
+		const acceleratedPlaybackRate =
+			(totalVideoDurationInSeconds * fps - videoSpeechDuration) /
 			(videoClipsDurationTarget - videoSpeechDuration);
 
 		return script.reduce(
@@ -131,12 +140,14 @@ export const Episode = React.memo<Props>(({script}) => {
 							meta.durationInSeconds -
 							trimStart -
 							(meta.durationInSeconds - (trimEnd || meta.durationInSeconds));
-						const clipRelativeDuration =
-							durationInSeconds / totalVideoDurationInSeconds;
-						const clipDurationTarget = Math.floor(
-							videoClipsDurationTarget * clipRelativeDuration
+						// const clipRelativeDuration =
+						// 	durationInSeconds / totalVideoDurationInSeconds;
+						const clipDurationTarget = Math.round(
+							meta.scriptDuration +
+								(durationInSeconds * fps - meta.scriptDuration) /
+									acceleratedPlaybackRate
 						);
-
+						// console.log({clipDurationTarget, durationInSeconds});
 						acc.elements.push(
 							<Sequence
 								key={`clip_${at}`}
@@ -146,7 +157,8 @@ export const Episode = React.memo<Props>(({script}) => {
 								<VideoClip
 									muted
 									{...(props as VideoClipProps)}
-									accelerate={accelerateVideo}
+									durationInSeconds={durationInSeconds}
+									accelerate={acceleratedPlaybackRate}
 									style={{
 										width: '100%',
 										height: '100%',
@@ -176,7 +188,7 @@ export const Episode = React.memo<Props>(({script}) => {
 			<Sequence durationInFrames={fps * SPLASH_DURATION_S}>
 				<Splash duration={fps * SPLASH_DURATION_S} />
 			</Sequence>
-			{clips.elements}
+			<ErrorWrapper>{clips.elements}</ErrorWrapper>
 			<Sequence
 				from={durationInFrames - fps * SPLASH_DURATION_S}
 				durationInFrames={fps * SPLASH_DURATION_S}

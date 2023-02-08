@@ -1,6 +1,6 @@
 import {Props as SlideProps} from './Slides'
 
-const CHARACTER_SPEECH_DURATION = 0.0667;
+const CHARACTER_SPEECH_DURATION = 0.07;
 const PAUSE_DURATION_S = 0.4;
 
 export const phrasesToSpeech = (textToSpeech: (string | number)[]) => {
