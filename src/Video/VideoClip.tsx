@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import {staticFile, useVideoConfig} from 'remotion';
 import {AbsoluteFill} from 'remotion';
 import {COLOR_3} from '../constants';
@@ -8,7 +8,7 @@ import {ClipWithoutSpeech} from './ClipWithoutSpeech';
 import {ClipWithSpeech} from './ClipWithSpeech';
 
 // eslint-disable-next-line react/no-unused-prop-types
-type SequenceRenderProps = {text: (string | number)[]; from: number};
+type SequenceRenderProps = {text: (string | number)[]; from: number, duration?: number};
 // eslint-disable-next-line react/no-unused-prop-types
 type BlurProps = {
 	frames: [number, number];
@@ -31,7 +31,15 @@ export type Props = {
 export type InternalProps = Omit<
 	Props,
 	'textToSpeech' | 'videoClipSrc' | 'blur' | 'accelerate' | 'durationInSeconds'
->;
+> & {startFrom: number; endAt: number};
+
+function checkValidInputRange(arr: number[]) {
+	for (let i = 1; i < arr.length; ++i) {
+			if (!(arr[i] > arr[i - 1])) {
+					throw new Error(`TTS from range must be strictly monotonically non-decreasing but got [${arr.slice(i-1).join(',')}]`);
+			}
+	}
+}
 
 export const VideoClip: React.FC<React.PropsWithChildren<Props>> = ({
 	videoClipSrc,
@@ -43,12 +51,15 @@ export const VideoClip: React.FC<React.PropsWithChildren<Props>> = ({
 }) => {
 	const {fps, durationInFrames: targetDuration} = useVideoConfig();
 	const src = staticFile(videoClipSrc);
+	useLayoutEffect(() => {
+		checkValidInputRange(textToSpeech.map(({from}) => from))
+	}, [textToSpeech])
 	return (
 		<AbsoluteFill style={{backgroundColor: COLOR_3}} title={src}>
 			{textToSpeech.length ? (
 				textToSpeech.reduce(
 					(acc, tts, at, all) => {
-						const speechDuration = durationFromText(tts.text, fps);
+						const speechDuration = tts.duration || durationFromText(tts.text, fps);
 						acc.clips.push(
 							<ErrorWrapper key={`${at}_${tts.from}`}>
 								<ClipWithSpeech
@@ -69,8 +80,8 @@ export const VideoClip: React.FC<React.PropsWithChildren<Props>> = ({
 								? next.from - (videoProps.startFrom || 0)
 								: durationInSeconds * fps) -
 							(tts.from - (videoProps.startFrom || 0) + speechDuration);
-						const acceleratedDuration = Math.ceil(diff / accelerate);
-						if (acceleratedDuration > 0){
+						const acceleratedDuration = Math.round(diff / accelerate);
+						if (acceleratedDuration > 0) {
 							acc.clips.push(
 								<ErrorWrapper key={`${at}_${tts.from}_accelerated`}>
 									<ClipWithoutSpeech
@@ -78,7 +89,11 @@ export const VideoClip: React.FC<React.PropsWithChildren<Props>> = ({
 										src={src}
 										from={acc.from}
 										startFrom={tts.from + speechDuration}
-										endAt={next?.from}
+										endAt={
+											(next && next.from - 1) ||
+											videoProps.endAt ||
+											Math.round(durationInSeconds * fps)
+										}
 										duration={acceleratedDuration}
 										accelerate={accelerate}
 									/>
@@ -99,7 +114,7 @@ export const VideoClip: React.FC<React.PropsWithChildren<Props>> = ({
 											from={0}
 											startFrom={videoProps.startFrom || 0}
 											endAt={textToSpeech[0].from}
-											duration={Math.ceil(textToSpeech[0].from / accelerate)}
+											duration={Math.ceil((textToSpeech[0].from - (videoProps.startFrom || 0)) / accelerate)}
 											accelerate={accelerate}
 										/>
 									</ErrorWrapper>,
@@ -118,6 +133,7 @@ export const VideoClip: React.FC<React.PropsWithChildren<Props>> = ({
 						src={src}
 						from={0}
 						startFrom={videoProps.startFrom || 0}
+						endAt={videoProps.endAt || Math.round(durationInSeconds * fps)}
 						duration={targetDuration}
 						accelerate={accelerate}
 					/>

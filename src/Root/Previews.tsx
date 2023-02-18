@@ -7,6 +7,33 @@ export const Previews = () => {
 	return (
 		<Folder name="Previews">
 			<Composition
+				id="Preview0101"
+				component={ClipPreview}
+				durationInFrames={EP_DURATION_FRAMES}
+				{...VIDEO_CONFIG}
+				defaultProps={{
+					src: staticFile('01/01.webm'),
+				}}
+			/>
+			<Composition
+				id="Preview0102"
+				component={ClipPreview}
+				durationInFrames={EP_DURATION_FRAMES}
+				{...VIDEO_CONFIG}
+				defaultProps={{
+					src: staticFile('01/02.webm'),
+				}}
+			/>
+			<Composition
+				id="Preview0103"
+				component={ClipPreview}
+				durationInFrames={EP_DURATION_FRAMES}
+				{...VIDEO_CONFIG}
+				defaultProps={{
+					src: staticFile('01/03.webm'),
+				}}
+			/>
+			<Composition
 				id="Preview0104"
 				component={ClipPreview}
 				durationInFrames={EP_DURATION_FRAMES}
@@ -36,7 +63,7 @@ export const Previews = () => {
 			<Composition
 				id="Preview0107"
 				component={ClipPreview}
-				durationInFrames={EP_DURATION_FRAMES}
+				durationInFrames={EP_DURATION_FRAMES*2}
 				{...VIDEO_CONFIG}
 				defaultProps={{
 					src: staticFile('01/07.webm'),

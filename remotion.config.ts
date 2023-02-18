@@ -6,4 +6,4 @@ Config.setConcurrency(os.cpus().length)
 Config.setDelayRenderTimeoutInMilliseconds(100000);
 Config.setOverwriteOutput(true);
 Config.setMaxTimelineTracks(30);
-Config.setLevel("verbose");
+// Config.setLevel("verbose");

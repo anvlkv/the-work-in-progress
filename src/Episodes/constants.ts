@@ -58,7 +58,7 @@ export const WARNING = {
   title: 'WARNING:',
   text: `This video may potentially trigger seizures for people with photosensitive epilepsy.
   Viewer discretion is advised.`,
-  textToSpeech:['Safety first!', 'Viewer discretion is advised']
+  textToSpeech:[.5,'Safety first!', 'Viewer discretion is advised',.5]
 }
 
 export const EP_DURATION_FRAMES = VIDEO_CONFIG.fps * 42 * 60 

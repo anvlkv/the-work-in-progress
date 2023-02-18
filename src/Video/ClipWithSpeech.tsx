@@ -23,7 +23,7 @@ export const ClipWithSpeech: React.FC<
 	return (
 		<Sequence durationInFrames={duration} from={from}>
 			<Video {...videoProps} />
-			<AcceleratedContext.Provider value={{remappedFrame: frame+videoProps.startFrom}}>
+			<AcceleratedContext.Provider value={{remappedFrame: (frame - from)+videoProps.startFrom}}>
 				{children}
 			</AcceleratedContext.Provider>
 			<AbsoluteFill

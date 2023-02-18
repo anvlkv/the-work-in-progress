@@ -21,16 +21,25 @@ export const ClipWithoutSpeech: React.FC<
 > = ({from, duration, accelerate, children,...videoProps}) => {
 	const frame = useCurrentFrame();
 	const {fps} = useVideoConfig();
-  // useEffectOnce(() => {
-  //   console.log(duration)
-  // })
+
+  useEffectOnce(() => {
+		const diff = videoProps.endAt - videoProps.startFrom
+		const computed = duration * accelerate
+		if (diff < 0) {
+			throw new Error(`Video ends earlier than starts: endAt[${videoProps.endAt}] startFrom[${videoProps.startFrom}]`)
+		}
+		if (Math.abs(diff - computed) > fps) {
+			console.warn(`miscalculated video length: ~${(diff-computed)/accelerate/fps}s ${diff > computed ? 'did not fit' : 'too long'} frames[${diff - computed}] seconds[${(diff - computed)/fps}]`)
+			console.log(diff)
+		}
+  })
 	return (
 		<Sequence durationInFrames={duration} from={from}>
 			<Video
 				playbackRate={accelerate}
 				{...videoProps}
 			/>
-			<AcceleratedContext.Provider value={{remappedFrame: Math.round(frame*accelerate)+videoProps.startFrom}}>
+			<AcceleratedContext.Provider value={{remappedFrame: videoProps.startFrom + Math.round((frame - from)*accelerate)}}>
 				{children}
 			</AcceleratedContext.Provider>
 			<AbsoluteFill
