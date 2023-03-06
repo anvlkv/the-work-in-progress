@@ -1,75 +1,56 @@
-import {Episode, Props} from '../Episode';
-import {INTRO, makeEnding, makePomodoro} from './constants';
+import {Episode} from './Standard/Episode';
+import {INTRO, makeEnding, makePomodoro, WARNING} from './constants';
+import {useScriptFromYaml} from './Standard/scriptFromYaml';
+import scriptYaml from './Ep02.yaml';
+import {useMemo} from 'react';
+import {EpisodeSlidesProps, EpProps, SingleSlideProps} from './Standard/types';
 
-const script: Props['script'] = [
-	{
-		script: [
-			{
-				text: `Episode 02`,
-				textToSpeech: [
-					.5,
-					'Welcome to the second episode of the work in progress by twopack.gallery',
-				],
-			},
-			INTRO,
-      makePomodoro(24, 'twenty four'),
-			{
-				title: `WIP Ep 02`,
-				text: `
-        POC -> to solution
-        `,
-				textToSpeech: [
-					.5,
-					'In this episode I will continue with my proof of concept',
-					0.25,
-					'I will make a simple studio for recording this podcast',
-					0.5,
-					"Let's see how it goes",
-				],
-			},
-		],
-	},
-	{
-		textToSpeech: [
-			{
-				from: 30,
-				text: [
-					.5,
-					`It's my first time trying remotion`,
-					0.25,
-					`I heard of it was this summer, at one react conference`,
-				],
-			},
-		],
-		videoClipSrc: '02/01.webm',
-	},
-	{
-		textToSpeech: [],
-		videoClipSrc: '02/02.webm',
-	},
-	{
-		textToSpeech: [],
-		videoClipSrc: '02/03.webm',
-	},
-	{
-		textToSpeech: [],
-		videoClipSrc: '02/04.webm',
-	},
-	{
-		textToSpeech: [],
-		videoClipSrc: '02/05.webmm',
-	},
-	{
-		textToSpeech: [],
-		videoClipSrc: '02/06.webm',
-	},
-	{
-		textToSpeech: [],
-		videoClipSrc: '02/07.webm',
-	},
-	{
-		script: [makeEnding('second')],
-	},
-];
+const start = {
+	type: 'slides',
+	props: [
+		WARNING,
+		{
+			text: `Episode 02`,
+			commentary: [
+				0.5,
+				'Welcome to the second episode of the work in progress by twopack.gallery',
+			],
+		},
+		INTRO,
+		{
+			title: `the WIP Ep 02`,
+			text: `Solution: the studio and the episode with remotion`,
+			commentary: [
+				0.5,
+				'In this episode I will continue with remotion',
+				0.25,
+				'I will use it to design my episodes programmatically',
+				0.25,
+				'You can see its already working in this and the previous episode',
+				0.5,
+				'Lets see how it goes',
+			],
+		},
+		makePomodoro(16, 'sixteen'),
+	],
+} as EpisodeSlidesProps;
 
-export const Ep02 = () => <Episode script={script} />;
+const end = {
+	type: 'slides',
+	props: [makeEnding('first')],
+} as EpisodeSlidesProps;
+
+export const Ep02 = ({
+	editorMode,
+	...epProps
+}: {editorMode?: boolean} & Partial<EpProps>) => {
+	const script = useScriptFromYaml(scriptYaml);
+	return (
+		<Episode
+			script={useMemo(() => [start, ...script, end], [script])}
+			id="Ep02"
+			editorMode={editorMode}
+			{...epProps}
+		/>
+	);
+};

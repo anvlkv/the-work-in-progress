@@ -1,10 +1,14 @@
-import {Composition} from 'remotion';
+import {Composition, getInputProps} from 'remotion';
 import {Ep01} from '../Episodes/Ep01';
 import {Trailer} from '../Episodes/Trailer';
 import {EP_DURATION_FRAMES} from '../Episodes/constants';
-import {VIDEO_CONFIG} from '../constants';
-import { Components } from './Components';
-import { Previews } from './Previews';
+import {SPLASH_DURATION_S, VIDEO_CONFIG} from '../constants';
+import {Components} from './Components';
+import {Previews} from './Previews';
+import {Ep02} from '../Episodes/Ep02';
+import {Editors} from './Editors';
+
+const {durationInFrames, ...defaultProps} = getInputProps();
 
 export const RemotionRoot: React.FC = () => {
 	return (
@@ -12,17 +16,26 @@ export const RemotionRoot: React.FC = () => {
 			<Composition
 				id="TrailerEp"
 				component={Trailer}
-				durationInFrames={2140}
+				durationInFrames={1853 + SPLASH_DURATION_S * VIDEO_CONFIG.fps * 2}
 				{...VIDEO_CONFIG}
 			/>
 			<Composition
 				id="Ep01"
 				component={Ep01}
-				durationInFrames={EP_DURATION_FRAMES}
+				durationInFrames={durationInFrames || EP_DURATION_FRAMES}
 				{...VIDEO_CONFIG}
+				defaultProps={defaultProps}
 			/>
-			<Previews/>
-			<Components/>
+			<Composition
+				id="Ep02"
+				component={Ep02}
+				durationInFrames={durationInFrames || EP_DURATION_FRAMES}
+				{...VIDEO_CONFIG}
+				defaultProps={defaultProps}
+			/>
+			<Editors />
+			<Previews />
+			<Components />
 		</>
 	);
 };

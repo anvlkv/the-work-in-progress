@@ -1,0 +1,1264 @@
+02/01/0.mp4:
+  0:
+    ff: start
+  1243:
+    tts:
+      - We are back at a video where an animated head makes the mouse-moves
+      - Let us try creating a prototype of an episode
+  2438:
+    tts:
+      - well, we have what we have
+      - .25
+      - but let us move on
+02/01/1.mp4:
+  1785:
+    tts:
+      - First some improvements to the looks of my speaker face
+  1896:
+    tts:
+      - I like the bag to clip the mouth shape where it grows too tall
+
+02/01/2.mp4:
+  127:
+    tts:
+      - Try just an id
+  717:
+    tts:
+      - nope, does not clip
+  1291:
+    tts:
+      - ah, yeah
+  2008:
+    tts:
+      - now
+      - .2
+      - about right
+  3872:
+    tts:
+      - Let us load it like that instead
+02/01/3.mp4:
+  446:
+    tts:
+      - make it a prop
+  1657:
+    tts:
+      - nothing to change here
+  3139:
+    tts:
+      - so use the same prop here
+02/01/4.mp4:
+  1243:
+    tts:
+      - and let us clean this up
+  1753:
+    tts:
+      - Hmm what do I call it
+  2565:
+    tts:
+      - Yeah, I could use a video clip component
+  2474:
+    tts:
+      - And add the prop here
+
+02/01/5.mp4:
+  223:
+    tts:
+      - okay
+      - this seems to work
+  1068:
+    tts:
+      - I could also use a presentation clip, if to follow that clips idea
+  3840:
+    tts:
+      - adding two packs there
+02/01/6.mp4:
+  1737:
+    tts:
+      - what is it?
+  1816:
+    tts:
+      - ah, an Img component
+  2980:
+    tts:
+      - let us see it
+  3585:
+    tts:
+      - tall boys
+02/01/7.mp4:
+  17:
+    tts:
+      - make it fit
+  271:
+    tts:
+      - not like this
+  860:
+    tts:
+      - what is an Img anyway?
+  1036:
+    tts:
+      - so ends up being an img tag
+  2342:
+    tts:
+      - does this help?
+  2613:
+    tts:
+      - not exactly
+  3251:
+    tts:
+      - better try it in browser
+02/01/8.mp4:
+  382:
+    tts:
+      - ah, simple
+  2502:
+    tts:
+      - move it a little
+02/01/9.mp4:
+  1609:
+    tts:
+      - let it take a title and some text
+  2215:
+    tts:
+      - with default title
+  3952:
+    tts:
+      - anything like a text component?
+  4111:
+    tts:
+      - ah true, simple
+02/01/10.mp4:
+  1275:
+    tts:
+      - I want something for an episode cover, so the text is optional
+  2055:
+    tts:
+      - I see nothing
+  2725:
+    tts:
+      - can I get color
+  3840:
+    tts:
+      - then here
+02/01/11.mp4:
+  2071:
+    tts:
+      - should I use another absolute fill for that?
+  2788:
+    tts:
+      - right, flex direction
+  2884:
+    tts:
+      - yes, here it is
+  3426:
+    tts:
+      - anything I need to do to add some styles?
+02/01/12.mp4:
+  430:
+    tts:
+      - try a class name
+  1036:
+    tts:
+      - be realistic
+  2040:
+    tts:
+      - needs a loader
+  1960:
+    tts:
+      - maybe later
+  2342:
+    tts:
+      - just use it here
+  3362:
+    tts:
+      - what do I need from this side of the presentation slide?
+02/01/13.mp4:
+  1068:
+    tts:
+      - is that the one?
+  3856:
+    tts:
+      - and what size it is gonna be
+02/01/14.mp4:
+  1434:
+    tts:
+      - something like this
+  1816:
+    tts:
+      - and center
+02/01/15.mp4:
+  175:
+    tts:
+      - now try with some text
+  1179:
+    tts:
+      - I want it to keep line breaks
+  1562:
+    tts:
+      - oeps, some more whitespace
+02/01/16.mp4:
+  2247:
+    tts:
+      - position the image
+02/01/17.mp4:
+  1880:
+    tts:
+      - so this is still fine
+  2788:
+    tts:
+      - ah right, the spaces from indented lines
+  3091:
+    tts:
+      - so make it just a paragraph
+02/01/18.mp4:
+  143:
+    tts:
+      - and then keep line breaks
+  1243:
+    tts:
+      - Suppose I have three kinds of clips
+02/01/19.mp4:
+  956:
+    tts:
+      - need to add speech to the presentation
+  3920:
+    tts:
+      - and take a look at sequences
+02/01/20.mp4:
+  2549:
+    tts:
+      - assume I keep episodes separate components
+  2996:
+    tts:
+      - and the first one is the trailer
+  3984:
+    tts:
+      - just a sequence of slides
+02/01/21.mp4:
+  900:
+    tts:
+      - with some voice over
+  1785:
+    tts:
+      - let us find our voice, only then it the show is authentic
+02/01/22.mp4:
+  1084:
+    tts:
+      - try the mdn example
+
+02/01/23.mp4:
+02/01/24.mp4:
+02/01/25.mp4:
+  1418:
+    tts:
+      - let there be a speaking head component as well
+02/01/26.mp4:
+  2773:
+    tts:
+      - but will I have the window object when rendering the actual video?
+      - would kind of suck if it only works in preview
+
+02/01/27.mp4:
+02/01/28.mp4:
+  2040:
+    tts:
+      - look for some more options
+02/01/29.mp4:
+02/01/30.mp4:
+02/01/31.mp4:
+  526:
+    tts:
+      - look for server-side text-to-speech
+  2581:
+    tts:
+      - festival
+02/01/32.mp4:
+02/01/33.mp4:
+  2932:
+    tts:
+      - so let us just understand what happens
+  4095:
+    tts:
+      - is there an example for rendering on server?
+      - let us check
+02/01/34.mp4:
+02/01/35.mp4:
+  621:
+    tts:
+      - so just try ssr example from docs
+02/01/36.mp4:
+  1323:
+    tts:
+      - run it
+  3872:
+    tts:
+      - right there is no sound
+
+02/01/37.mp4:
+02/01/38.mp4:
+02/01/39.mp4:
+  1785:
+    tts:
+      - add an audio sample
+02/01/40.mp4:
+02/01/41.mp4:
+02/01/42.mp4:
+  1816:
+    tts:
+      - hmm can actually use it?
+02/01/43.mp4:
+  669:
+    tts:
+      - nope, I might need something broader
+  3729:
+    tts:
+      - let us look for something open source
+02/01/44.mp4:
+  1099:
+    tts:
+      - opentts by synesthesiam
+      - seems right
+  1434:
+    tts:
+      - and easy to try, just run it with docker
+02/01/45.mp4:
+  1960:
+    tts:
+      - so it is ready
+  4143:
+    tts:
+      - yes, this sounds pretty natural
+02/01/46.mp4:
+  3888:
+    tts:
+      - make it an URL
+02/01/47.mp4:
+  16:
+    tts:
+      - check the API docs
+  1099:
+    tts:
+      - try right here
+02/01/48.mp4:
+02/01/49.mp4:
+  3298:
+    tts:
+      - how to use SSML?
+02/01/50.mp4:
+  781:
+    tts:
+      - let us see what comes out as well
+02/01/51.mp4:
+  3888:
+    tts:
+      - yey it speaks
+      - only it speaks tags out loud
+
+02/01/52.mp4:
+02/01/53.mp4:
+02/01/54.mp4:
+  351:
+    tts:
+      - missing a query parameter for the SSML
+  3490:
+    tts:
+      - now it speaks
+      - .5
+      - with pauses if I want
+02/01/55.mp4:
+  446:
+    tts:
+      - seeking sounds like hell
+  2613:
+    tts:
+      - but the actual API response sounds fine
+02/01/56.mp4:
+  892:
+    tts:
+      - let us try using just that
+02/01/57.mp4:
+02/01/58.mp4:
+  96:
+    tts:
+      - suppose the text for an episode could look like this
+  2279:
+    tts:
+      - add a sequence for every step of presentation
+02/01/59.mp4:
+02/01/60.mp4:
+02/01/61.mp4:
+  2597:
+    tts:
+      - all the steps at once
+  2868:
+    tts:
+      - add durations to sequences
+  3505:
+    tts:
+      - looks better
+      - .5
+      - now
+02/01/62.mp4:
+  48:
+    tts:
+      - let us just use some loose estimate for duration
+
+02/01/63.mp4:
+02/01/64.mp4:
+  552:
+    tts:
+      - sometimes loose is too loose
+02/01/65.mp4:
+  127:
+    tts:
+      - can I tell TTS how long should be the speech duration?
+  2661:
+    tts:
+      - yes, if I am using larynx voices
+  3505:
+    tts:
+      - try it
+  3633:
+    volume: 50
+    ns: start
+  3681:
+    volume: 0
+    ns: end
+  4302:
+    volume: 50
+    ns: start
+02/01/66.mp4:
+  112:
+    volume: 0
+    ns: end
+
+02/01/67.mp4:
+02/01/68.mp4:
+02/01/69.mp4:
+02/01/70.mp4:
+02/01/71.mp4:
+02/01/72.mp4:
+  1370:
+    tts:
+      - no
+      - .2
+      - espeak it is
+02/01/73.mp4:
+  860:
+    tts:
+      - more messing with durations
+      - .15
+      - haven not quite figured them yet
+02/01/74.mp4:
+  2326:
+    tts:
+      - the non seekable audio in preview just keeps restarting
+      - I hope not like this in the final video
+  3155:
+    tts:
+      - well the API response from open tts is fine
+02/01/75.mp4:
+  191:
+    tts:
+      - let us make sure
+      - what comes out from render?
+  1020:
+    tts:
+      - looks like it is done
+  1325:
+    ns: start
+    volume: 50
+  1770:
+    ns: end
+    volume: 0
+    tts:
+      - yay!
+      - it works
+02/01/76.mp4:
+  1896:
+    tts:
+      - suppose I want to make a ton of these
+      - let us make it generic
+  2966:
+    tts:
+      - in general it needs this
+  3458:
+    tts:
+      - need to offset every next sequence by elapsed frames
+  4047:
+    tts:
+      - and what will vary?
+      - the text to speech
+  4270:
+    tts:
+      - and the visible text
+02/01/77.mp4:
+  669:
+    tts:
+      - and increase the elapsed frame count
+  2820:
+    tts:
+      - the estimate gets better with every time
+  4143:
+    tts:
+      - well I wonder if I can get it from the API
+02/01/78.mp4:
+  2502:
+    tts:
+      - a slightly better estimate
+      - one day I make it right
+  3824:
+    tts:
+      - let us turn the text to speech argument into SSML string
+02/01/79.mp4:
+  2071:
+    tts:
+      - assume a break after every sentence
+02/01/80.mp4:
+  813:
+    tts:
+      - and use the text argument for presentation text
+  1976:
+    tts:
+      - let us say that the script will look
+  2534:
+    tts:
+      - something like this
+  3569:
+    tts:
+      - with the text to speech
+  4143:
+    tts:
+      - as strings please
+02/01/81.mp4:
+  621:
+    tts:
+      - do the same with the other ones
+02/01/82.mp4:
+  2900:
+    tts:
+      - remove this marvel
+  3043:
+    tts:
+      - simply map the script entries
+  3681:
+    tts:
+      - I need a way to know what did it estimate in total
+  4175:
+    tts:
+      - only it has to be an object not separate arguments
+02/01/83.mp4:
+02/01/84.mp4:
+  1801:
+    tts:
+      - 1
+      - nope
+  2167:
+    tts:
+      - .5
+      - seems adding breaks in from of speech does not make sense to the open tts
+  3171:
+    tts:
+      - seems better now
+      - only my console log is in a wrong place
+  3617:
+    tts:
+      - move it
+  3936:
+    tts:
+      - right here
+  4191:
+    tts:
+      - so the trailer will take two thousand three hundred fourteen frames
+02/01/85.mp4:
+  32:
+    tts:
+      - set it here
+  2103:
+    tts:
+      - suppose it does it, only I need to remove all the dots from my text to speech as it actually says the word "dot"
+      - and few other corrections to the text
+02/01/86.mp4:
+  1530:
+    tts:
+      - suppose I am ready to render the trailer
+      - exciting!
+  2836:
+    tts:
+      - so the trailer seems to be doing fine
+      - let us continue
+  3314:
+    tts:
+      - I need to create the episodes
+  2470:
+    tts:
+      - Add recordings for the first episode
+
+02/01/87.mp4:
+02/02/0.mp4:
+02/02/1.mp4:
+  590:
+    tts:
+      - what should it look like?
+      - an episode
+      - with these huge videos
+  1052:
+    tts:
+      - back to the docs
+  1801:
+    tts:
+      - does it sound like I might want to use the offthread video?
+  3171:
+    tts:
+      - maybe
+  3888:
+    tts:
+      - take the same thing as we wrote for the trailer
+  4223:
+    tts:
+      - paste in the episode component
+02/02/2.mp4:
+  32:
+    tts:
+      - now fix a few things
+  1131:
+    tts:
+      - one major difference
+  1291:
+    tts:
+      - I will use the video clip here instead of presentation
+  1466:
+    tts:
+      - what should I call it
+      - .5
+
+02/02/3.mp4:
+  860:
+    tts:
+      - so get the actual videos in
+  1084:
+    tts:
+      - and I already wrap it in static file here
+      - let us get them from public directory then
+02/02/4.mp4:
+  3856:
+    tts:
+      - so I need to do get the duration of each clip
+02/02/5.mp4:
+  478:
+    tts:
+      - so there is a media util for that
+  1115:
+    tts:
+      - sadly no hook
+      - unlike the audio
+02/02/6.mp4:
+  112:
+    tts:
+      - I already load the video once
+      - can I maybe use the ref and get metadata from it?
+02/02/7.mp4:
+02/02/8.mp4:
+02/02/9.mp4:
+  159:
+    tts:
+      - hell yeah, do like this every day and mama will be proud
+  2725:
+    tts:
+      - sadly it turned out my recording was off for a bit
+  2820:
+    tts:
+      - I made a few changes in the meantime
+  2932:
+    tts:
+      - Trailer is simply rendering slides with the given script
+  3219:
+    tts:
+      - I extracted some utilities
+      - which I am still using
+  3665:
+    tts:
+      - as for the episode
+      - It should allow for both video clips and slides
+02/02/10.mp4:
+  64:
+    tts:
+      - I started with taking care of the difference between these two
+  2231:
+    tts:
+      - ok so here is my sequence from slides
+      - some durations for the whole episode is also appearing in the log
+  2645:
+    tts:
+      - add some opening slides
+
+02/02/11.mp4:
+02/02/12.mp4:
+  2868:
+    tts:
+      - let us make some adjustments to how it looks
+02/02/13.mp4:
+  1259:
+    tts:
+      - so I want it to say things at a certain frame
+  3203:
+    tts:
+      - let us get a little smarter about these props
+02/02/14.mp4:
+  2725:
+    tts:
+      - add a speech example to one of the videos
+  3126:
+    ns: start
+    volume: 50
+  3271:
+    ns: end
+    volume: 0
+    tts:
+      - hmm, why is it doing that?
+02/02/15.mp4:
+  255:
+    tts:
+      - could the non-unique key issue cause this?
+      - Imagine, it could
+02/02/16.mp4:
+  0:
+    ns: start
+    volume: 50
+  69:
+    ns: end
+    volume: 0
+    tts:
+      - nope still happens
+  2199:
+    tts:
+      - just check this
+  2609:
+    ns: start
+    volume: 50
+  2686:
+    ns: end
+    volume: 0
+    tts:
+      - ok, still the API response sounds good
+02/02/17.mp4:
+02/02/18.mp4:
+  574:
+    tts:
+      - sounds like the audio restarts
+      - is it because something is being remounted?
+  1498:
+    tts:
+      - well, try a memo
+  2565:
+    tts:
+      - nope that did not help
+  3012:
+    tts:
+      - I will try and render just a short piece
+02/02/19.mp4:
+  2326:
+    tts:
+      - rendered alright
+      - in 545 seconds
+  3266:
+    tts:
+      - only that I forgot to add the speech to video clip
+02/02/20.mp4:
+  3266:
+    tts:
+      - let us also pass on the rest oof the video props
+02/02/21.mp4:
+02/02/22.mp4:
+  1816:
+    tts:
+      - can I really not do something about the audio in preview?
+02/02/23.mp4:
+  1323:
+    tts:
+      - when unsure
+      - fix warnings
+  2932:
+    tts:
+      - well
+      - see it
+  3840:
+    tts:
+      - okay
+      - the test is what I expected
+  3952:
+    tts:
+      - and I concluded I will be rendering on my laptop
+      - suppose it can render an episode over a night
+02/02/24.mp4:
+  414:
+    tts:
+      - let us move on
+  1131:
+    tts:
+      - also make the generic episode
+02/02/25.mp4:
+  1731:
+    tts:
+      - and use in the episode one component
+      - together with the script
+  4254:
+    tts:
+      - keep a simplistic example
+02/02/26.mp4:
+  1769:
+    tts:
+      - here it is
+      - the example
+02/02/27.mp4:
+  2008:
+    tts:
+      - hmm, I lost the rest of the video somehow
+      - I know it is much longer
+  2103:
+    tts:
+      - ok, yes, what doo they say about non-seekable media
+  2725:
+    tts:
+      - is it time to try offthread video?
+  3107:
+    tts:
+      - ok here it comes
+  3251:
+    tts:
+      - and no ref then
+      - but it is not used anyways
+02/02/28.mp4:
+  4159:
+    tts:
+      - yeah, I forgot to change the end at prop
+02/02/29.mp4:
+  4047:
+    tts:
+      - seems better
+02/02/30.mp4:
+  940:
+    tts:
+      - hmm, timeline freezes for some reason
+  3251:
+    tts:
+      - and let us add one privacy feature
+      - .75
+      - Blur some area of the video
+02/02/31.mp4:
+02/02/32.mp4:
+  1020:
+    tts:
+      - suppose just some react css properties are passed
+  2852:
+    tts:
+      - and how to blur a thing?
+02/02/33.mp4:
+02/02/34.mp4:
+  1769:
+    tts:
+      - well, make at an SVG shape
+  2725:
+    tts:
+      - just a full size rectangle
+      - does not matter now
+02/02/35.mp4:
+  446:
+    tts:
+      - accept some blur prop
+02/02/36.mp4:
+  3203:
+    tts:
+      - so just map all the blur entries as sequences
+      - blur from frame to frame, given the style prop to specify the size and position
+02/02/37.mp4:
+  1832:
+    tts:
+      - and just and an example
+02/02/38.mp4:
+  3968:
+    tts:
+      - ok
+      - it shows up, but shape is not what I want
+02/02/39.mp4:
+  1338:
+    tts:
+      - change the way it scales
+  2932:
+    tts:
+      - and make it rounded
+02/02/40.mp4:
+  0:
+    tts:
+      - and make it blurred
+  2103:
+    tts:
+      - yeah, not blurring anything underneath it
+02/02/41.mp4:
+  972:
+    tts:
+      - well just cover up with black rectangle for now
+  4238:
+    tts:
+      - take a loot with a different sample
+02/02/42.mp4:
+  1323:
+    tts:
+      - yup, something like this
+  3043:
+    tts:
+      - add a splash screen
+02/02/43.mp4:
+  1912:
+    tts:
+      - an svg circle
+  2024:
+    tts:
+      - with r or radius, tho?
+02/02/44.mp4:
+  351:
+    tts:
+      - and make it scale up as a video starts
+  4063:
+    tts:
+      - I want it to scale from center
+02/02/45.mp4:
+  701:
+    tts:
+      - simply set the transform origin center
+  1195:
+    tts:
+      - add an example
+  2438:
+    tts:
+      - see it
+  2645:
+    tts:
+      - something is happening, yes
+  3410:
+    tts:
+      - fix the ratio
+02/02/46.mp4:
+02/02/47.mp4:
+02/02/48.mp4:
+  908:
+    tts:
+      - and it is the radius that is the issue here
+  3745:
+    tts:
+      - recover my color constants
+02/02/49.mp4:
+02/02/50.mp4:
+  1020:
+    tts:
+      - adjust the animation
+02/02/51.mp4:
+  1673:
+    tts:
+      - clip the contents
+  2980:
+    tts:
+      - add an image
+02/02/52.mp4:
+  1386:
+    tts:
+      - yeah, not quite
+  2135:
+    tts:
+      - a little better
+  4079:
+    tts:
+      - finally fix the image
+02/02/53.mp4:
+  2486:
+    tts:
+      - and fix the transforms
+02/02/54.mp4:
+02/02/55.mp4:
+02/02/56.mp4:
+  2502:
+    tts:
+      - drop this
+  3426:
+    tts:
+      - add the splash to the trailer
+02/02/57.mp4:
+  1912:
+    tts:
+      - suppose I want to show the reverse animation at the ending
+02/02/58.mp4:
+  112:
+    tts:
+      - I need to know the duration of slides here
+  1466:
+    tts:
+      - let us see it
+      - 1
+  3633:
+    tts:
+      - and one at the end
+      - 1
+02/02/59.mp4:
+  414:
+    tts:
+      - make splash duration a constant, I can import
+  876:
+    tts:
+      - in seconds, the number of frames I can compute with FPS
+  3346:
+    tts:
+      - use the FPS for speech duration as well
+02/02/60.mp4:
+  2119:
+    tts:
+      - also in seconds
+02/02/61.mp4:
+02/02/62.mp4:
+  2295:
+    tts:
+      - duration in frames must be an integer
+  2518:
+    tts:
+      - round up here
+  4302:
+    tts:
+      - even better its not a number now
+02/02/63.mp4:
+  64:
+    tts:
+      - then let us debug
+  1801:
+    tts:
+      - add a condition
+02/02/64.mp4:
+  191:
+    tts:
+      - ah yeah, forgot the FPS
+  1354:
+    tts:
+      - seems better
+      - now an SVG attribute error, tho
+  1896:
+    tts:
+      - fix that one too
+  3792:
+    tts:
+      - add an end to the slides sequence
+02/02/65.mp4:
+  829:
+    tts:
+      - text to speech should handle pauses
+      - I just add them as number values to text to speech arrays
+  2741:
+    tts:
+      - and handle them here
+02/03/0.mp4:
+  80:
+    startFrom: true
+    tts:
+      - let us add some pauses in our speech
+  1801:
+    tts:
+      - and log the full durations
+  3091:
+    tts:
+      - yeah, and how many times its being rendered?
+  3601:
+    tts:
+      - react is unhappy
+      - let us check
+02/03/1.mp4:
+02/03/2.mp4:
+  2183:
+    tts:
+      - well it is a render per frame
+      - which makes sense, I guess
+      - still something is off
+      - but I can test the ending splash
+02/03/3.mp4:
+  303:
+    tts:
+      - okay
+      - let us see what comes out
+02/03/4.mp4:
+  303:
+    tts:
+      - meanwhile separate the ssml thingy
+  2310:
+    tts:
+      - there is an entire thing for react-ssml-dom
+      - nice!
+  3251:
+    tts:
+      - but not for now
+  3776:
+    tts:
+      - an utility function it will be
+02/03/5.mp4:
+  1291:
+    tts:
+      - and start using it here in the slides component
+  1816:
+    tts:
+      - as well as the video clip
+  3601:
+    tts:
+      - update the props here as well
+02/03/6.mp4:
+  574:
+    tts:
+      - and the examples
+  3282:
+    tts:
+      - Meanwhile the video is ready
+      - let us check
+  3888:
+    tts:
+      - well, yes
+  3999:
+    tts:
+      - and also no
+02/03/7.mp4:
+  1641:
+    tts:
+      - make some corrections to text as well
+02/03/8.mp4:
+  3904:
+    tts:
+      - attempt another render
+02/03/9.mp4:
+  32:
+    tts:
+      - also add something for previewing the clips, so that I can note down frame numbers and timings
+02/03/10.mp4:
+  2836:
+    tts:
+      - It would help me to see if there is something spoken on that video preview
+02/03/11.mp4:
+02/03/12.mp4:
+02/03/13.mp4:
+  2486:
+    tts:
+      - meanwhile the render of the trailer failed
+      - with a time out
+02/03/14.mp4:
+02/03/15.mp4:
+  3410:
+    tts:
+      - a preview like this
+  3856:
+    tts:
+      - only the video does not fit
+02/03/16.mp4:
+  1625:
+    tts:
+      - and I was hoping to see something in the timeline for my "speech indicator" thingy
+  2215:
+    tts:
+      - can I do something custom about the editor timeline?
+  3984:
+    tts:
+      - does not seem so
+      - hmm, get things in timeline
+02/03/17.mp4:
+  1195:
+    tts:
+      - what I render them upfront?
+02/03/18.mp4:
+02/03/19.mp4:
+02/03/20.mp4:
+02/03/21.mp4:
+02/03/22.mp4:
+  112:
+    tts:
+      - yeah, I see something
+  2980:
+    tts:
+      - but only that much
+      - which suggests its not the way
+02/03/23.mp4:
+02/03/24.mp4:
+  2199:
+    tts:
+      - hmm, would it help to preload things?
+      - so that my render does not timeout
+02/03/25.mp4:
+  3043:
+    tts:
+      - did not magically help with the restarting speech, that I know for sure
+02/03/26.mp4:
+  64:
+    tts:
+      - just like it says
+      - helpful with the player component
+  159:
+    tts:
+      - pretty sure I have to do it differently with my usage
+02/03/27.mp4:
+02/03/28.mp4:
+02/03/29.mp4:
+02/03/30.mp4:
+02/03/31.mp4:
+  2040:
+    tts:
+      - well, for the preview I could just render audio
+      - it does show up in the timeline with some visualization on it
+02/03/32.mp4:
+  1976:
+    tts:
+      - at least it should
+  2263:
+    tts:
+      - ah and it does
+      - just took a while to load my audio file
+  2868:
+    tts:
+      - that is enough for preview
+02/03/33.mp4:
+02/03/34.mp4:
+02/03/35.mp4:
+02/03/36.mp4:
+02/03/37.mp4:
+02/03/38.mp4:
+02/03/39.mp4:
+02/03/40.mp4:
+02/03/41.mp4:
+02/03/42.mp4:
+02/03/43.mp4:
+02/03/44.mp4:
+02/03/45.mp4:
+02/03/46.mp4:
+  0:
+    tts:
+      - Now add speech to video
+02/03/47.mp4:
+02/03/48.mp4:
+02/03/49.mp4:
+02/03/50.mp4:
+02/03/51.mp4:
+02/03/52.mp4:
+02/03/53.mp4:
+02/03/54.mp4:
+02/03/55.mp4:
+02/03/56.mp4:
+02/03/57.mp4:
+02/03/58.mp4:
+02/03/59.mp4:
+02/03/60.mp4:
+02/03/61.mp4:
+02/03/62.mp4:
+02/03/63.mp4:
+  3840:
+    tts:
+      - another piece of math will likely be far off
+      - but who cares, right now
+02/03/64.mp4:
+02/03/65.mp4:
+02/03/66.mp4:
+02/03/67.mp4:
+02/03/68.mp4:
+02/03/69.mp4:
+02/03/70.mp4:
+02/03/71.mp4:
+02/03/72.mp4:
+02/03/73.mp4:
+02/03/74.mp4:

@@ -1,4 +1,4 @@
-import { interpolate, Loop, useCurrentFrame, useVideoConfig } from "remotion/."
+import { interpolate, useCurrentFrame, useVideoConfig } from "remotion/."
 import { Head } from "./Head"
 
 export const TiltingHead: React.FC = () => {

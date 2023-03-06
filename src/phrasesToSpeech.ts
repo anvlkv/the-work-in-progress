@@ -1,9 +1,9 @@
-import {Props as SlideProps} from './Slides';
-
 const CHARACTER_SPEECH_DURATION = 0.07;
 const PAUSE_DURATION_S = 0.4;
 
-export function phrasesToSpeech(textToSpeech: (string | number)[]) {
+export type TTSEntry = (string|number)[];
+
+export function phrasesToSpeech(textToSpeech: TTSEntry) {
 	return `<speech>
   ${textToSpeech.reduce<string>((acc, current, at) => {
 		if (typeof current === 'number' && acc.length === 0) {
@@ -19,7 +19,7 @@ export function phrasesToSpeech(textToSpeech: (string | number)[]) {
 }
 
 export function phrasesToTTsUrl(
-	textToSpeech: (string | number)[] | string,
+	textToSpeech: TTSEntry | string,
 	ssml = true
 ) {
 	// console.log(phrasesToSpeech(textToSpeech as []))
@@ -32,7 +32,7 @@ export function phrasesToTTsUrl(
 	)}&ssml=${ssml}`;
 }
 
-export function durationFromText(text: (string | number)[], fps: number) {
+export function durationFromText(text: TTSEntry, fps: number) {
 	const result = Math.ceil(
 		text.reduce<number>((acc, current) => {
 			return (
@@ -44,11 +44,4 @@ export function durationFromText(text: (string | number)[], fps: number) {
 		}, 0) * fps
 	);
 	return result;
-}
-
-export function durationFromProps({script}: SlideProps, fps: number) {
-	return script.reduce(
-		(acc, slide) => acc + durationFromText(slide.textToSpeech, fps),
-		0
-	);
 }

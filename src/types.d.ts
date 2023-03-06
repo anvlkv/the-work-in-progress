@@ -1,5 +1,6 @@
 declare module '*.mov'
 declare module '*.mp4'
+declare module '*.yaml'
 
 declare type VideoProps = Omit<React.DetailedHTMLProps<React.VideoHTMLAttributes<HTMLVideoElement>, HTMLVideoElement>, "nonce" | "onEnded" | "autoPlay" | "controls"> & {
   volume?: any;

@@ -1,9 +1,10 @@
 import { VIDEO_CONFIG } from "../constants"
+import { SingleSlideProps } from "./Standard/types"
 
-export const makeEnding = (ep: string) => ({
+export const makeEnding = (ep: string): SingleSlideProps => ({
   title:'Thank you!',
   text: 'Sincerely yours twopack.gallery',
-  textToSpeech: [
+  commentary: [
     `Thank you for watching the ${ep} episode of the work in progress by two pack dot gallery`,
     .25,
     'I hope you enjoyed it',
@@ -14,14 +15,14 @@ export const makeEnding = (ep: string) => ({
   ]
 })
 
-export const INTRO = {
+export const INTRO: SingleSlideProps = {
   text: `
     - creative process
     - no adds
     - no best practices
     - CC-BY-NC-SA 4.0
   `,
-  textToSpeech: [
+  commentary: [
     '',
     .5,
     'The following podcast demonstrates a creative process using the tools and information at hand',
@@ -34,14 +35,14 @@ export const INTRO = {
   ]
 }
 
-export const makePomodoro = (sessions: number, speakSessions: string) => ({
+export const makePomodoro = (sessions: number, speakSessions: string): SingleSlideProps => ({
   title: 'Pomodoro',
   text: `
     work session: 45 minutes
     break: 5-15 minutes
     sessions: x${sessions}
   `,
-  textToSpeech: [
+  commentary: [
     '',
     .25,
     'In this episode I am using pomodoro technique',
@@ -54,11 +55,11 @@ export const makePomodoro = (sessions: number, speakSessions: string) => ({
   ]
 })
 
-export const WARNING = {
+export const WARNING: SingleSlideProps = {
   title: 'WARNING:',
   text: `This video may potentially trigger seizures for people with photosensitive epilepsy.
   Viewer discretion is advised.`,
-  textToSpeech:[.5,'Safety first!', 'Viewer discretion is advised',.5]
+  commentary:[.5,'Safety first!', 'Viewer discretion is advised',.5]
 }
 
 export const EP_DURATION_FRAMES = VIDEO_CONFIG.fps * 42 * 60 

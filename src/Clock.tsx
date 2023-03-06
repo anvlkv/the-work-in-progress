@@ -1,5 +1,5 @@
 import {AbsoluteFill, useVideoConfig, Internals} from 'remotion';
-import {useRemappedFrame} from './Video/AcceleratedVideo';
+import {useRemappedFrame} from './Video/RemappedFrameContext';
 import {COLOR_1, COLOR_2} from './constants';
 
 const isPreview = ['player-development', 'preview'].includes(
@@ -10,9 +10,9 @@ export const Clock: React.FC<{elapsedFrames: number, file?: string}> = ({
 	elapsedFrames = 0, file
 }) => {
 	const {fps} = useVideoConfig();
-	const remappedFrame = useRemappedFrame() + elapsedFrames;
+	const remappedFrame = useRemappedFrame()();
 
-	const remappedTime = new Date(Math.round((remappedFrame / fps) * 1000));
+	const remappedTime = new Date(Math.round(((remappedFrame+elapsedFrames) / fps) * 1000));
 	remappedTime.setHours(remappedTime.getHours() - 1);
 	return (
 		<AbsoluteFill
@@ -28,14 +28,14 @@ export const Clock: React.FC<{elapsedFrames: number, file?: string}> = ({
 			}}
 		>
 			<span>
-				~ {remappedTime.toTimeString().match(/.*(\d\d:\d\d:\d\d)/)![1]}.
-				{remappedTime.getMilliseconds()}
+				{/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */ }
+				~ {remappedTime.toTimeString().match(/.*(\d\d:\d\d):\d\d/)![1]}
 			</span>
 			{isPreview && (
 				<div style={{color: COLOR_1}}>
 					file: {file}
 					<br/>
-					frame: {remappedFrame - elapsedFrames}
+					frame: {remappedFrame}
 				</div>
 
 			)}

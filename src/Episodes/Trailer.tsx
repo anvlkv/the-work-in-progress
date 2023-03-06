@@ -1,12 +1,10 @@
-import {Sequence, useVideoConfig} from 'remotion';
-import {SPLASH_DURATION_S} from '../constants';
-import { durationFromProps } from '../phrasesToSpeech';
-import {Slides, Props} from '../Slides';
-import {Splash} from '../Splash';
+import { useMemo } from 'react';
+import { Episode } from './Standard/Episode';
+import { EpProps, SingleSlideProps } from './Standard/types';
 
-const trailerScript: Props['script'] = [
+const trailerScript: SingleSlideProps[] = [
 	{
-		textToSpeech: [
+		commentary: [
 			.5,
 			`Welcome to the trailer episode of the work in progress by two pack dot gallery `,
 			.25,
@@ -20,7 +18,7 @@ const trailerScript: Props['script'] = [
       - ungallery
 			- work in progress
     `,
-		textToSpeech: [
+		commentary: [
 			.5,
 			`We are two artists creating an ungallery`,
 			.25,
@@ -39,7 +37,7 @@ const trailerScript: Props['script'] = [
 			 - free to watch
 			 - CC-BY-NC-SA 4.0
     `,
-		textToSpeech: [
+		commentary: [
 			.5,
 			`You can expect to see our creative process in our episodes`,
 			.25,
@@ -60,7 +58,7 @@ const trailerScript: Props['script'] = [
       - share your feedback
       - support on patreon
     `,
-		textToSpeech: [
+		commentary: [
 			.5,
 			`I most of all appreciate you watching the podcast`,
 			.25,
@@ -73,28 +71,25 @@ const trailerScript: Props['script'] = [
 		],
 	},
 	{
-		textToSpeech: [
+		commentary: [
 			`I hope you will find it fun and maybe even useful, see you in one our episodes `,
 			.25,
 		],
 	},
 ];
 
-export const Trailer = () => {
-	const {fps} = useVideoConfig();
-	const slidesDuration = durationFromProps({script: trailerScript}, fps);
-	console.log('Trailer duration', slidesDuration + SPLASH_DURATION_S*fps*2)
+
+
+export const Trailer = ({
+	editorMode,
+	...epProps
+}: {editorMode?: boolean} & Partial<EpProps>) => {
 	return (
-		<>
-			<Sequence durationInFrames={fps * SPLASH_DURATION_S}>
-				<Splash duration={fps * SPLASH_DURATION_S} />
-			</Sequence>
-			<Sequence from={fps * SPLASH_DURATION_S} durationInFrames={slidesDuration}>
-				<Slides script={trailerScript} />
-			</Sequence>
-			<Sequence from={slidesDuration + fps * SPLASH_DURATION_S}>
-				<Splash duration={-fps * SPLASH_DURATION_S} />
-			</Sequence>
-		</>
+		<Episode
+			script={useMemo(() => [{type: 'slides', props: trailerScript}], [])}
+			id="TrailerEp"
+			editorMode={editorMode}
+			{...epProps}
+		/>
 	);
 };

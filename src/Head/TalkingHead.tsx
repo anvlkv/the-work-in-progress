@@ -1,9 +1,6 @@
 import {
 	AbsoluteFill,
-	interpolate,
 	Loop,
-	spring,
-	staticFile,
 	useCurrentFrame,
 	useVideoConfig,
 } from 'remotion';

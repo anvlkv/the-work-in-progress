@@ -1,14 +1,13 @@
-import { useAudioData } from '@remotion/media-utils';
-import { useState, useLayoutEffect, useEffect } from 'react';
-import {Audio, continueRender, delayRender, prefetch, useVideoConfig} from 'remotion';
+import {Audio} from 'remotion';
 import { phrasesToTTsUrl } from '../phrasesToSpeech';
 import {TalkingHead} from './TalkingHead';
 
-export const SpeakingHead: React.FC<{text: string; ssml?: boolean}> = ({
+export const SpeakingHead: React.FC<{text: string; ssml?: boolean, ttsUrl?: string}> = ({
 	text,
 	ssml = false,
+	ttsUrl
 }) => {
-	const speech = phrasesToTTsUrl(text, ssml);
+	const speech = ttsUrl || phrasesToTTsUrl(text, ssml);
 	return (
 		<>
 			<TalkingHead fileName={speech} />
