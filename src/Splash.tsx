@@ -1,9 +1,11 @@
-import {AbsoluteFill, interpolate, staticFile, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, interpolate, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {COLOR_1, COLOR_3} from './constants';
 
 const MAX_SCALE = 4;
-export const Splash: React.FC<{duration: number}> = ({duration}) => {
+export const Splash: React.FC<{duration?: number}> = ({duration}) => {
 	const frame = useCurrentFrame();
+	const {durationInFrames} = useVideoConfig();
+	duration = duration || durationInFrames
 	const scale =
 		duration > 0
 			? interpolate(

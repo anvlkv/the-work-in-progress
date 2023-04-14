@@ -1,248 +1,176 @@
+import {AbsoluteFill, Loop, staticFile, Video} from 'remotion';
+import {Audio} from 'remotion';
 import React, {useMemo} from 'react';
 import {Sequence, useVideoConfig} from 'remotion';
-import {FrameMapping, VideoClip} from '../../Video/VideoClip';
-import {Slides} from '../../Slides/Slides';
-import {SAFE_PLAYBACK_RATE, SPLASH_DURATION_S} from '../../constants';
+import {VideoClipProps} from '../../Video/types';
+import {PresentationClip} from '../../Slides/PresentationClip';
+import {SpeakingHead} from '../../Head/SpeakingHead';
 import {Splash} from '../../Splash';
+import {Speech} from '../../Speech';
+import {COLOR_2, SAFE_PLAYBACK_RATE, SPLASH_DURATION_S} from '../../constants';
+import {
+	EpProps,
+	EpAudioCompositionEntry,
+	EpCompositionEntry,
+	FrameMapping,
+} from './types';
+import {useEpisodeComposition, useEpisodeMeta, useFrameMapping} from './hooks';
+import {TiltingHead} from '../../Head/TiltingHead';
 import {Clock} from '../../Clock';
-import {EpProps, VideoClipMeta, SlidesMeta} from './types';
-import {useEpisodeMeta} from './useEpisodeMeta';
-import {BlurProps} from '../../Video/Blur';
+import {SlidesMeta, VideoClipMeta} from '../../server/types';
+import {SafeSpeedVideo} from '../../Video/SafeSpeedVideo';
+import {FastForwardVideo} from '../../Video/FastForwardVideo';
 
-type EpSequenceProps = Omit<EpProps, 'durationInFrames'> & {
-	id: string;
-	targetDuration: number;
+const EpisodeAudio: React.FC<{
+	comp: FrameMapping<EpAudioCompositionEntry>[];
+	src?: VideoClipProps;
+}> = ({comp, src}) => {
+	const [from, to, props] = useFrameMapping<EpAudioCompositionEntry>(comp);
+	return (
+		<>
+			{props && props.tts && (
+				<Sequence from={from + (typeof props.tts[0] === 'number' ? props.tts[0] : 0)} durationInFrames={to - from + 1}>
+					<Speech speech={props.tts} />
+				</Sequence>
+			)}
+			{props && src && props.originalVolume && (
+				<Sequence from={from} durationInFrames={to - from + 1}>
+					<Audio
+						muted={false}
+						src={staticFile(src.src)}
+						playbackRate={Math.min(src.accelerate || 1, SAFE_PLAYBACK_RATE)}
+						startFrom={src.startFrom}
+						endAt={src.endAt}
+						// eslint-disable-next-line @remotion/volume-callback
+						volume={props.originalVolume}
+					/>
+				</Sequence>
+			)}
+		</>
+	);
 };
 
-const EpisodeClips = React.memo<EpSequenceProps>(
-	({script, id, targetDuration}) => {
-		const {fps} = useVideoConfig();
-		const {scriptMeta, epMeta} = useEpisodeMeta(`${id}`, script, fps);
+const EpisodeClips: React.FC<{
+	comp: FrameMapping<EpCompositionEntry>[];
+	editorMode: boolean;
+}> = ({comp, editorMode}) => {
+	const [from, to, props] = useFrameMapping<EpCompositionEntry>(comp);
+	return (
+		<AbsoluteFill>
+			{props && props.video && (
+				<Sequence from={from} durationInFrames={to - from + 1}>
+					{props.video.accelerate > SAFE_PLAYBACK_RATE ? (
+						<FastForwardVideo
+							{...props.video}
+							src={staticFile(props.video.src)}
+							editorMode={editorMode}
+						/>
+					) : (
+						<SafeSpeedVideo
+							{...props.video}
+							src={staticFile(props.video.src)}
+							editorMode={editorMode}
+						/>
+					)}
+				</Sequence>
+			)}
+		</AbsoluteFill>
+	);
+};
 
-		if (!scriptMeta) {
-			return null;
-		}
-
-		const retrofitDuration =
-			targetDuration -
-			epMeta.totalNormalSpeedFrames -
-			epMeta.totalSlidesDuration;
-
-		const framesToAccelerateAll =
-			epMeta.totalSafeAcceleratedFrames + epMeta.totalFastForwardFrames;
-
-		const framesToAccelerateSafe = epMeta.totalSafeAcceleratedFrames;
-		
-		const requiredAcceleration = framesToAccelerateAll / retrofitDuration;
-
-		let fastForwardAcceleration = requiredAcceleration;
-		let safeAcceleration = requiredAcceleration;
-
-		if (safeAcceleration > SAFE_PLAYBACK_RATE) {
-			safeAcceleration = SAFE_PLAYBACK_RATE;
-			const safeAcceleratedFrames = Math.round(
-				framesToAccelerateSafe / safeAcceleration
-			);
-			const leftOverAcceleration =
-				(epMeta.totalVideoDuration -
-					framesToAccelerateSafe -
-					epMeta.totalNormalSpeedFrames) /
-				(retrofitDuration - safeAcceleratedFrames);
-			fastForwardAcceleration = leftOverAcceleration;
-
-			if (retrofitDuration < safeAcceleratedFrames) {
-				throw new Error(
-					`can not retrofit ${retrofitDuration} < ${safeAcceleratedFrames} by ${
-						safeAcceleratedFrames - retrofitDuration
-					}`
-				);
-			}
-		}
-
-		console.log({
-			retrofitDuration,
-			requiredAcceleration,
-			framesToAccelerateAll,
-			framesToAccelerateSafe,
-			fastForwardAcceleration,
-			safeAcceleration,
-		});
-
-		let from = 0;
-		let elapsedVideo = 0;
-		return (
-			<>
-				{script.map(({type, props}, at, all) => {
-					const meta = scriptMeta[at];
-					let result = <></>;
-
-					if (type === 'slides') {
-						const sMeta = meta as SlidesMeta;
-						result = (
-							<Slides
-								key={`slides_${at}`}
-								script={sMeta.remappedTTS.map(([tFrom, to], at) => {
-									const d = to - tFrom;
-									from += d;
-									return [from - d, d + from, props[at]];
-								})}
-							/>
-						);
-					} else if (type === 'video') {
-						const vMeta = meta as VideoClipMeta;
-						const originalDuration = Math.round(
-							vMeta.originalDurationInSeconds * fps
-						);
-						const clipDurationTarget = Math.round(
-							vMeta.normalSpeedFrames +
-								vMeta.fastForwardFrames / fastForwardAcceleration +
-								(vMeta.duration -
-									vMeta.normalSpeedFrames -
-									vMeta.fastForwardFrames) /
-									safeAcceleration
-						);
-						result = (
-							<VideoEntry
-								key={`video_${props.src}_${at}`}
-								from={from}
-								vMeta={vMeta}
-								blur={props.blur}
-								volume={props.volume}
-								endAt={props.endAt}
-								startFrom={props.startFrom}
-								safeAcceleration={safeAcceleration}
-								fastForwardAcceleration={fastForwardAcceleration}
-								src={props.src}
-								clipDurationTarget={clipDurationTarget}
-								elapsedVideo={elapsedVideo}
-							/>
-						);
-						from += clipDurationTarget;
-						elapsedVideo += originalDuration;
-					}
-					return result;
-				})}
-			</>
-		);
-	}
-);
-
-const VideoEntry: React.FC<{
-	vMeta: VideoClipMeta;
-	from: number;
-	clipDurationTarget: number;
-	safeAcceleration: number;
-	fastForwardAcceleration: number;
-	elapsedVideo: number;
-	src: string;
-	startFrom?: number;
-	endAt?: number;
-	blur?: FrameMapping<BlurProps>[];
-	volume?: FrameMapping<number>[];
-}> = ({
-	vMeta,
-	clipDurationTarget,
-	safeAcceleration,
-	fastForwardAcceleration,
-	from,
-	elapsedVideo,
-	src,
-	startFrom,
-	endAt,
-	blur,
-	volume,
-}) => {
-	const playbackRateMapping = useMemo(() => {
-		const frameMap = new Map<number, number>();
-
-		for (
-			let i = 0, acceleration = [0, 0, safeAcceleration];
-			i <= vMeta.duration;
-			i++
-		) {
-			if (acceleration[1] === i) {
-				const ffFragment = vMeta.remappedFastForward.find(
-					([from, to]) => from <= i && i <= to
-				);
-				const nsFragment = vMeta.remappedNormalSpeed.find(
-					([from, to]) => from <= i && i <= to
-				);
-				if (ffFragment) {
-					acceleration = [
-						ffFragment[0],
-						ffFragment[1],
-						fastForwardAcceleration,
-					];
-				} else if (nsFragment) {
-					acceleration = [nsFragment[0], nsFragment[1], 1];
-				} else {
-					acceleration = [i + 1, vMeta.duration, safeAcceleration];
-				}
-			}
-			frameMap.set(i, acceleration[2]);
-		}
-
-		return Array.from(frameMap.entries()).reduce((acc, [frame, speed]) => {
-			const last = acc[acc.length - 1];
-			if (last && speed === last[2]) {
-				last[1] = frame;
-			} else {
-				acc.push([frame, frame, speed]);
-			}
-			return acc;
-		}, [] as FrameMapping<number>[]);
-	}, [
-		fastForwardAcceleration,
-		safeAcceleration,
-		vMeta.duration,
-		vMeta.remappedFastForward,
-		vMeta.remappedNormalSpeed,
-	]);
+const EpisodeSlides: React.FC<{
+	comp: FrameMapping<EpCompositionEntry>[];
+}> = ({comp}) => {
+	const [from, to, props] = useFrameMapping<EpCompositionEntry>(comp);
 
 	return (
-		<Sequence from={from} durationInFrames={clipDurationTarget}>
-			<VideoClip
-				videoClipSrc={src}
-				startFrom={startFrom}
-				endAt={endAt}
-				blurMapping={blur}
-				volumeMapping={volume}
-				playbackRateMapping={playbackRateMapping}
-				durationInSeconds={vMeta.durationInSeconds}
-			>
-				<Clock elapsedFrames={elapsedVideo} file={src} />
-			</VideoClip>
+		<AbsoluteFill>
+			{props && props.slide && (
+				<Sequence from={from} durationInFrames={to - from + 1}>
+					<PresentationClip {...props.slide} />
+				</Sequence>
+			)}
+		</AbsoluteFill>
+	);
+};
+
+const EpisodeSpeechBooth: React.FC<{
+	comp: FrameMapping<EpAudioCompositionEntry>[];
+}> = ({comp}) => {
+	const {fps} = useVideoConfig();
+	const [from, to, props] = useFrameMapping<EpAudioCompositionEntry>(comp);
+
+	return (
+		<AbsoluteFill
+			style={{
+				top: 'unset',
+				left: 'unset',
+				right: 0,
+				bottom: 0,
+				width: '20%',
+				height: '20%',
+				backgroundColor: COLOR_2,
+				borderRadius: '1em 0 0 0',
+			}}
+		>
+			{props && props.tts ? (
+				<Sequence from={from} durationInFrames={to - from + 1}>
+					<SpeakingHead speech={props.tts} />
+				</Sequence>
+			) : (
+				<Loop durationInFrames={fps * 10}>
+					{' '}
+					<TiltingHead />
+				</Loop>
+			)}
+		</AbsoluteFill>
+	);
+};
+
+const EpisodeClock: React.FC<{
+	comp: FrameMapping<EpCompositionEntry>[];
+	editorMode: boolean;
+	meta: (VideoClipMeta | SlidesMeta)[];
+}> = ({comp, editorMode, meta}) => {
+	const {fps} = useVideoConfig();
+	const [from, to, props] = useFrameMapping<EpCompositionEntry>(comp);
+	const elapsedVideo = useMemo(
+		() =>
+			(props &&
+				meta.slice(0, props.index - 1).reduce((acc, m) => {
+					return (
+						acc + ((m as VideoClipMeta).originalDurationInSeconds || 0) * fps
+					);
+				}, 0)) ||
+			0,
+		[meta, props, fps]
+	);
+
+	if (!props || !props.video || elapsedVideo === null) {
+		return null;
+	}
+
+	return (
+		<Sequence from={from} durationInFrames={to - from + 1}>
+			<Clock
+				file={props.video.src}
+				elapsedFrames={elapsedVideo}
+				startFrom={props.video.startFrom}
+				acceleration={props.video.accelerate || 1}
+				editorMode={editorMode}
+			/>
 		</Sequence>
 	);
 };
 
-const EpisodeAudio = React.memo<EpSequenceProps>(({script, id}) => {
-	const {fps} = useVideoConfig();
-	const {scriptMeta, epMeta} = useEpisodeMeta(`${id}`, script, fps);
-	if (!scriptMeta) {
-		return null;
-	}
-	return <></>;
-});
-
-const EpisodeSpeechBooth = React.memo<EpSequenceProps>(({script, id}) => {
-	const {fps} = useVideoConfig();
-	const {scriptMeta, epMeta} = useEpisodeMeta(`${id}`, script, fps);
-	if (!scriptMeta) {
-		return null;
-	}
-	return <></>;
-});
-
-export const Episode: React.FC<EpProps> = ({
-	script,
+const EpisodeComponent: React.FC<EpProps> = ({
+	path,
 	id,
 	editorMode,
 	chunked,
 }) => {
 	const {fps, durationInFrames} = useVideoConfig();
-	const {scriptMeta, epMeta} = useEpisodeMeta(`${id}`, script, fps);
-
+	const meta = useEpisodeMeta(path, fps);
 	let sequenceDuration = durationInFrames;
 	let from = 0;
 	if (chunked) {
@@ -258,6 +186,12 @@ export const Episode: React.FC<EpProps> = ({
 		console.error('negative duration');
 	}
 
+	const comp = useEpisodeComposition(id, path, fps, totalClipsDurationTarget);
+
+	if (!comp) {
+		return null;
+	}
+
 	return (
 		<Sequence name={id} from={from} durationInFrames={sequenceDuration}>
 			<Sequence durationInFrames={fps * SPLASH_DURATION_S}>
@@ -267,23 +201,17 @@ export const Episode: React.FC<EpProps> = ({
 				from={fps * SPLASH_DURATION_S}
 				durationInFrames={totalClipsDurationTarget}
 			>
+				<EpisodeAudio comp={comp.audioComposition} />
 				<EpisodeClips
-					script={script}
-					id={`${id}`}
 					editorMode={Boolean(editorMode)}
-					targetDuration={totalClipsDurationTarget}
+					comp={comp.composition}
 				/>
-				<EpisodeAudio
-					script={script}
-					id={`${id}`}
+				<EpisodeSlides comp={comp.composition} />
+				<EpisodeSpeechBooth comp={comp.audioComposition} />
+				<EpisodeClock
 					editorMode={Boolean(editorMode)}
-					targetDuration={totalClipsDurationTarget}
-				/>
-				<EpisodeSpeechBooth
-					script={script}
-					id={`${id}`}
-					editorMode={Boolean(editorMode)}
-					targetDuration={totalClipsDurationTarget}
+					comp={comp.composition}
+					meta={meta.value?.sequence || []}
 				/>
 			</Sequence>
 			<Sequence
@@ -295,3 +223,5 @@ export const Episode: React.FC<EpProps> = ({
 		</Sequence>
 	);
 };
+
+export const Episode = React.memo(EpisodeComponent);

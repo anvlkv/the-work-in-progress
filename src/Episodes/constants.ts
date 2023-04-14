@@ -2,6 +2,7 @@ import { VIDEO_CONFIG } from "../constants"
 import { SingleSlideProps } from "./Standard/types"
 
 export const makeEnding = (ep: string): SingleSlideProps => ({
+  id: 'ending',
   title:'Thank you!',
   text: 'Sincerely yours twopack.gallery',
   commentary: [
@@ -16,6 +17,7 @@ export const makeEnding = (ep: string): SingleSlideProps => ({
 })
 
 export const INTRO: SingleSlideProps = {
+  id: 'intro',
   text: `
     - creative process
     - no adds
@@ -36,6 +38,7 @@ export const INTRO: SingleSlideProps = {
 }
 
 export const makePomodoro = (sessions: number, speakSessions: string): SingleSlideProps => ({
+  id: 'pomodoro',
   title: 'Pomodoro',
   text: `
     work session: 45 minutes
@@ -56,6 +59,7 @@ export const makePomodoro = (sessions: number, speakSessions: string): SingleSli
 })
 
 export const WARNING: SingleSlideProps = {
+  id: 'warning',
   title: 'WARNING:',
   text: `This video may potentially trigger seizures for people with photosensitive epilepsy.
   Viewer discretion is advised.`,

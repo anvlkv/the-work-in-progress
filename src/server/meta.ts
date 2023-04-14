@@ -1,252 +1,386 @@
 import ffprobe from 'ffprobe';
 import {path as ffprobePath} from 'ffprobe-static';
+import ffmpegPath from 'ffmpeg-static';
 import {VideoMetadata} from '@remotion/media-utils';
+import {getCanExtractFramesFast} from '@remotion/renderer';
 import {
-	VideoClipMeta,
-	SlidesMeta,
 	EpisodeVideoProps,
-	SingleSlideProps,
+	EpisodeEntryProps,
+	FrameMapping,
 } from '../Episodes/Standard/types';
 import {phrasesToTTsUrl, TTSEntry} from '../phrasesToSpeech';
-import {FrameMapping} from '../Video/VideoClip';
+import {
+	VideoFrameType,
+	AudioFrameType,
+	EpMeta,
+	VideoClipMeta,
+	SlidesMeta,
+	AudioMeta,
+} from './types';
+
+export const ffprobeCache = {} as {[key: string]: number | VideoMetadata};
+
+const cached = (url: string) => ffprobeCache[url];
+const setCached = (url: string, val: number | VideoMetadata) => {
+	ffprobeCache[url] = val;
+};
 
 async function getAudioDurationInSeconds(url: string): Promise<number> {
+	if (cached(url)) {
+		return cached(url) as number;
+	}
 	const probe = await ffprobe(url, {path: ffprobePath});
 	const stream = probe.streams[0];
-	return parseFloat(stream.duration as unknown as string);
+	const val = parseFloat(stream.duration as unknown as string);
+	setCached(url, val);
+	return val;
 }
 
-async function getVideoMetadata(url: string): Promise<VideoMetadata> {
-	const probe = await ffprobe(`./public/${url}`, {path: ffprobePath});
+async function getVideoMetadata(
+	url: string
+): Promise<VideoMetadata & {allowOffthread: boolean}> {
+	if (cached(url)) {
+		return cached(url) as VideoMetadata & {allowOffthread: boolean};
+	}
+	const probe = await ffprobe(`${url}`, {path: ffprobePath});
 	const stream = probe.streams[0];
-	const meta: VideoMetadata = {
+	const {canExtractFramesFast, shouldReencode} = await getCanExtractFramesFast({
+		src: url,
+		ffprobeExecutable: ffprobePath,
+		ffmpegExecutable: ffmpegPath,
+	}).catch(e => ({canExtractFramesFast: true, shouldReencode: true}));
+	if (shouldReencode && !canExtractFramesFast) {
+		console.info(`video ${url} can be re-encoded to extract frames fast`);
+	}
+	const meta: VideoMetadata & {allowOffthread: boolean} = {
 		aspectRatio: (stream.width || 0) / (stream.height || 0),
 		durationInSeconds: parseFloat(stream.duration as unknown as string),
 		height: stream.height || 0,
 		width: stream.width || 0,
 		isRemote: false,
+		allowOffthread: canExtractFramesFast,
 	};
+	setCached(url, meta);
 	return meta;
 }
 
-export async function processTTSDuration(text: TTSEntry, fps: number) {
+async function getTTSDurationInSeconds(text: TTSEntry) {
 	if (text.length === 0) {
 		return 0;
 	}
 	const textUrl = phrasesToTTsUrl(text);
-	const duration = await getAudioDurationInSeconds(textUrl);
-	return Math.round(
-		(duration + (typeof text[0] === 'number' ? text[0] : 0)) * fps
+	return (
+		(await getAudioDurationInSeconds(textUrl)) +
+		(typeof text[0] === 'number' ? text[0] : 0)
 	);
 }
 
-export async function processVideoClipMeta(
+function applySpeechMap(
 	{
-		commentary = [],
-		src,
-		endAt,
-		startFrom = 0,
-		fastForward,
-		forceNormalSpeed = [],
-	}: EpisodeVideoProps['props'],
+		framesMap,
+		audioMap,
+		ttsDurations,
+	}: {
+		framesMap: Map<number, VideoFrameType>;
+		audioMap: Map<number, AudioFrameType>;
+		ttsDurations: number[];
+	},
+	{props}: EpisodeVideoProps,
 	fps: number
 ) {
-	const safeTo = (to: null | number) => (to === null ? Infinity : to);
-	const toMax = (to: null | number) => {
-		const mTo =
-			to === null || to === Infinity
-				? endAt || Math.round(videoClipMeta.durationInSeconds * fps)
-				: to;
-		return Math.min(
-			mTo,
-			endAt || Math.round(videoClipMeta.durationInSeconds * fps)
-		);
-	};
-	const fromMin = (from: number) => Math.max(startFrom || 0, from, 0);
-	const videoMeta = await getVideoMetadata(src);
-	const videoClipMeta: VideoClipMeta = {
-		isVideo: true,
-		...videoMeta,
-		scriptDuration: 0,
-		duration: Math.round(videoMeta.durationInSeconds * fps),
-		originalDurationInSeconds: videoMeta.durationInSeconds,
-		remappedTTS: [],
-		remappedFastForward: [],
-		remappedNormalSpeed: forceNormalSpeed,
-		fastForwardFrames: 0,
-		normalSpeedFrames: 0,
-		speechOvershoot: 0,
-	};
-	videoClipMeta.duration;
-	videoClipMeta.duration -=
-		endAt === undefined ? 0 : videoClipMeta.duration - endAt;
-	videoClipMeta.duration -= startFrom;
-	videoClipMeta.durationInSeconds = videoClipMeta.duration / fps;
-
-	// videoClipMeta.duration = Math.round(videoClipMeta.durationInSeconds * fps);
-	for (const tts of commentary) {
-		const {from, tts: text} = tts;
-		const duration = (await processTTSDuration(text, fps)) || 0;
-		const to = duration + from;
-		videoClipMeta.scriptDuration += duration;
-		videoClipMeta.remappedTTS.push([from, to, text]);
-
-		if (from > toMax(from)) {
-			videoClipMeta.speechOvershoot += to - from;
-		} else if (to > toMax(to)) {
-			videoClipMeta.speechOvershoot += to - toMax(to);
+	const overshootMap = new Map<number, [VideoFrameType, AudioFrameType]>();
+	let speechDuration = 0;
+	for (const [at, {from}] of props.commentary.entries()) {
+		if (!framesMap.has(from)) {
+			throw new Error('commentary out of frame range');
 		}
-
-		const matchingNSFrames = forceNormalSpeed.findIndex(
-			([nFrom, nTo]) => nFrom <= from && safeTo(nTo) >= to
-		);
-		const endingEarlyNSFrames = forceNormalSpeed.findIndex(
-			([nFrom, nTo]) => nFrom <= from && safeTo(nTo) > from && safeTo(nTo) < to
-		);
-		const startingLateNSFrames = forceNormalSpeed.findIndex(
-			([nFrom, nTo]) => nFrom <= from && safeTo(nTo) > from && safeTo(nTo) < to
-		);
-		const prevAdjacentNSFrames = forceNormalSpeed.findIndex(
-			([nFrom, nTo]) => nFrom < from && safeTo(nTo) < from && safeTo(nTo) < to
-		);
-		const nextAdjacentNSFrames = forceNormalSpeed.findIndex(
-			([nFrom, nTo]) => nFrom > from && safeTo(nTo) > from && safeTo(nTo) > to
-		);
-
-		if (matchingNSFrames === -1) {
-			if (endingEarlyNSFrames >= 0) {
-				forceNormalSpeed[endingEarlyNSFrames][1] = toMax(to);
-			} else if (startingLateNSFrames >= 0) {
-				forceNormalSpeed[startingLateNSFrames][0] = fromMin(from);
-			} else if (nextAdjacentNSFrames === -1) {
-				forceNormalSpeed.push([from, toMax(to), true]);
+		const ttsDuration = Math.round(ttsDurations[at] * fps);
+		for (let f = from; f <= ttsDuration + from; f++) {
+			if (framesMap.has(f)) {
+				audioMap.set(f, {TTS: {tts: at}});
+				framesMap.set(f, VideoFrameType.Normal);
 			} else {
-				forceNormalSpeed.splice(prevAdjacentNSFrames + 1, 0, [
-					from,
-					toMax(to),
-					true,
-				]);
+				overshootMap.set(f - from, [VideoFrameType.Normal, {TTS: {tts: -1}}]);
 			}
+			speechDuration++;
 		}
 	}
 
-	
-	videoClipMeta.remappedNormalSpeed.forEach((vv) => {
-		vv[0] = fromMin(vv[0] || 0);
-		vv[1] = toMax(vv[1] || videoClipMeta.duration);
-	});
-
-	fastForward =
-		forceNormalSpeed?.length && fastForward
-			? forceNormalSpeed.reduce(
-					(acc, [from, to]) =>
-						reSliceFragment(from, toMax(to) - from, acc, toMax),
-					fastForward
-			  )
-			: fastForward;
-
-	videoClipMeta.remappedFastForward = fastForward || [];
-
-	videoClipMeta.remappedFastForward.forEach((vv) => {
-		vv[0] = fromMin(vv[0] || 0);
-		vv[1] = toMax(vv[1] || videoClipMeta.duration);
-	});
-
-	videoClipMeta.fastForwardFrames = Math.round(
-		fastForward
-			? fastForward.reduce<number>(
-					(sum, [from, to, ff]: FrameMapping<boolean>) =>
-						ff ? sum + toMax(to) - fromMin(from) : sum,
-					0
-			  )
-			: 0
-	);
-
-	videoClipMeta.normalSpeedFrames = Math.round(
-		forceNormalSpeed
-			? forceNormalSpeed.reduce<number>(
-					(sum, [from, to, ns]: FrameMapping<boolean>) =>
-						ns ? sum + toMax(to) - fromMin(from) : sum,
-					0
-			  )
-			: 0
-	);
-	const accelerated =
-		videoClipMeta.duration -
-		videoClipMeta.fastForwardFrames -
-		videoClipMeta.normalSpeedFrames;
-	console.log({
-		normal: videoClipMeta.normalSpeedFrames,
-		fFast: videoClipMeta.fastForwardFrames,
-		accelerated,
-	});
-
-	if (accelerated !== 0) {
-		throw new Error('it does it wrong');
-	}
-
-	return videoClipMeta;
+	return {
+		framesMap,
+		overshootMap,
+		audioMap,
+		speechDuration,
+	};
 }
 
-export async function processSlidesMeta(
-	script: SingleSlideProps[],
+function computeVideoMap(
+	{props}: EpisodeVideoProps,
+	meta: VideoMetadata,
 	fps: number
-): Promise<SlidesMeta> {
-	const slidesMeta = await Promise.all(
-		script.map(({commentary}) => processTTSDuration(commentary, fps) || [0, ''])
-	).then(
-		(d) =>
-			({
-				isSlides: true,
-				...d.reduce(
-					(acc, dd, at) => {
-						const last = acc.remappedTTS[acc.remappedTTS.length - 1];
-						const from = (last && last[1]) || 0;
-						const to = from + dd;
-						acc.remappedTTS.push([from, to, script[at].commentary]);
-						acc.scriptDuration += dd;
-						return acc;
-					},
-					{remappedTTS: [] as FrameMapping<TTSEntry>[], scriptDuration: 0}
-				),
-			} as SlidesMeta)
-	);
-	return slidesMeta;
-}
-
-function reSliceFragment(
-	from: number,
-	duration: number,
-	acc: FrameMapping<boolean>[],
-	safeTo: (to: number | null) => number,
 ) {
-	const startsEarlierEndsLater = acc.findIndex(
-		([fFrom, to]) => fFrom <= from && safeTo(to) >= safeTo(from + duration)
-	);
-	const startsEarlier = acc.findIndex(
-		([fFrom, to]) => fFrom <= from && safeTo(to) > from
-	);
-	const endsLater = acc.findIndex(
-		([fFrom, to]) => fFrom >= from && safeTo(to) > from
-	);
+	const framesMap = new Map<number, VideoFrameType>();
+	const audioMap = new Map<number, AudioFrameType>();
+	const originalDuration = Math.round(meta.durationInSeconds * fps);
 
-	if (startsEarlierEndsLater >= 0) {
-		const prevEnding = acc[startsEarlierEndsLater][1];
-		// should end before script
-		acc[startsEarlierEndsLater][1] = from;
-		// should restart after script
-		acc.splice(startsEarlierEndsLater + 1, 0, [
-			from + duration,
-			prevEnding,
-			acc[startsEarlierEndsLater][2],
-		]);
-	} else if (startsEarlier >= 0) {
-		// should end before script
-		acc[startsEarlier][1] = from;
-	} else if (endsLater >= 0) {
-		// should start after script
-		acc[endsLater][0] = from + duration;
+	let ff;
+	let ns;
+	let volume;
+	let duration = 0;
+
+	for (
+		let f = props.startFrom || 0;
+		f <= (props.endAt || originalDuration);
+		f++
+	) {
+		let speed = VideoFrameType.Accelerated;
+		ff =
+			ff ||
+			props.fastForward?.find(([from, to, v]) => v && from >= f && f <= to);
+		ns =
+			ns ||
+			props.forceNormalSpeed?.find(
+				([from, to, v]) => v && from >= f && f <= to
+			);
+		volume =
+			volume ||
+			props.volume?.find(([from, to, v]) => v && from >= f && f <= to);
+		if (ff) {
+			if (ff[1] === f) {
+				ff = undefined;
+			}
+			speed = VideoFrameType.Fast;
+		}
+		if (ns) {
+			if (ns[1] === f) {
+				ns = undefined;
+			}
+			speed = VideoFrameType.Normal;
+		}
+		if (volume) {
+			const vv = volume as FrameMapping<number>;
+			if (volume[1] === f) {
+				volume = undefined;
+			}
+			audioMap.set(f, {Original: {volume: vv[2]}});
+		} else {
+			audioMap.set(f, {Silence: true});
+		}
+		framesMap.set(f, speed);
+		duration++;
 	}
 
-	return acc;
+	return {
+		framesMap,
+		duration,
+		audioMap,
+	};
+}
+
+function computeTTSMap(
+	entryIndex: number,
+	durationInSeconds: number,
+	fps: number
+) {
+	const duration = Math.round(durationInSeconds * fps);
+	const framesMap = new Map<number, AudioFrameType>(
+		Array.from<[number, AudioFrameType]>({length: duration})
+			.fill([0, {TTS: {tts: entryIndex}}])
+			.map(([, f], i) => [i, f])
+	);
+	return {
+		framesMap,
+		duration,
+	};
+}
+function computeSlidesMap(
+	entryIndex: number,
+	durationInSeconds: number,
+	fps: number
+) {
+	const duration = Math.round(durationInSeconds * fps);
+	const framesMap = new Map<number, number>(
+		Array.from<[number, number]>({length: duration})
+			.fill([0, entryIndex])
+			.map(([, f], i) => [i, f])
+	);
+	return {
+		framesMap,
+		duration,
+	};
+}
+
+export async function computeEpisodeMeta(
+	script: EpisodeEntryProps[],
+	fps: number
+): Promise<EpMeta> {
+	const sequence: (VideoClipMeta | SlidesMeta)[] = [];
+	const audioSequence: AudioMeta[] = [];
+	const runningTotals = {
+		totalVideoDuration: 0,
+		totalSlidesDuration: 0,
+		totalFastForwardFrames: 0,
+		totalNormalSpeedFrames: 0,
+		totalSafeAcceleratedFrames: 0,
+	};
+	const entriesMeta = [] as (
+		| [VideoMetadata & {allowOffthread: boolean}, number[]]
+		| number
+	)[];
+
+	for (const entry of script) {
+		switch (entry.type) {
+			case 'video':
+				entriesMeta.push(
+					await getVideoMetadata(`./public/${entry.props.src}`).then(
+						async (d) => [
+							d,
+							await Promise.all(
+								entry.props.commentary.map(({tts}) =>
+									getTTSDurationInSeconds(tts)
+								)
+							),
+						]
+					)
+				);
+				break;
+			case 'slides':
+				entriesMeta.push(await getTTSDurationInSeconds(entry.props.commentary));
+				break;
+			default:
+				throw new Error('unsupported type');
+		}
+	}
+
+	const epMap: EpMeta['framesMap'] = new Map();
+	let overshoot;
+
+	for (const [at, entry] of script.entries()) {
+		const meta = entriesMeta[at];
+		switch (entry.type) {
+			case 'video': {
+				const [vMeta, ttsDurations] = meta as [VideoMetadata, number[]];
+				const {duration, ...maps} = computeVideoMap(entry, vMeta, fps);
+				if (overshoot) {
+					// apply tts overshoot from previous iteration
+					const first = entry.props.startFrom || 0;
+					overshoot.forEach(([v, a], f) => {
+						maps.framesMap.set(f + first, v);
+						if (!maps.audioMap.get(f + first)?.Silence) {
+							console.warn(`audio overlap ${f} frames with ${entry.props.src}`);
+						}
+						maps.audioMap.set(f + first, a);
+					});
+					overshoot = undefined;
+				}
+
+				const {framesMap, overshootMap, audioMap} = applySpeechMap(
+					{...maps, ttsDurations},
+					entry,
+					fps
+				);
+
+				const durationInSeconds = duration / fps;
+
+				sequence.push({
+					...vMeta,
+					isVideo: true,
+					framesMap,
+					originalDurationInSeconds: vMeta.durationInSeconds,
+					durationInSeconds,
+				} as VideoClipMeta);
+
+				audioSequence.push({
+					isAudio: true,
+					framesMap: audioMap,
+					durationInSeconds,
+				});
+
+				framesMap.forEach((value, frame) => {
+					epMap.set(`${entry.props.src}|${epMap.size}`, [
+						[sequence.length - 1, frame],
+						[audioSequence.length - 1, frame],
+					]);
+					switch (value) {
+						case VideoFrameType.Normal:
+							runningTotals.totalNormalSpeedFrames++;
+							break;
+						case VideoFrameType.Accelerated:
+							runningTotals.totalSafeAcceleratedFrames++;
+							break;
+						case VideoFrameType.Fast:
+							runningTotals.totalFastForwardFrames++;
+							break;
+						default:
+							throw new Error('unsupported type');
+					}
+
+					runningTotals.totalVideoDuration++;
+				});
+				if (overshootMap.size) {
+					// store for next iteration
+					overshoot = overshootMap;
+				}
+				break;
+			}
+			case 'slides': {
+				const durationInSeconds = meta as number;
+				let slidesDuration = 0;
+				const {framesMap} = computeTTSMap(at, durationInSeconds, fps);
+				const {framesMap: slidesMap} = computeSlidesMap(
+					at,
+					durationInSeconds,
+					fps
+				);
+				sequence.push({
+					isSlides: true,
+					durationInSeconds: slidesDuration,
+					framesMap: slidesMap,
+				} as SlidesMeta);
+				audioSequence.push({
+					isAudio: true,
+					durationInSeconds,
+					framesMap,
+				});
+				framesMap.forEach((value, frame) => {
+					epMap.set(`slides_${entry.props.id}|${epMap.size}`, [
+						[at, frame],
+						[at, frame],
+					]);
+					runningTotals.totalSlidesDuration++;
+				});
+				slidesDuration += durationInSeconds;
+				// });
+
+				break;
+			}
+			default:
+				throw new Error('unsupported type');
+		}
+	}
+
+	if (overshoot) {
+		throw new Error('TTS overshoot left...');
+	}
+
+	const meta = {
+		fps,
+		audioSequence,
+		sequence,
+		framesMap: epMap,
+		...runningTotals,
+	};
+	validateMeta(meta);
+	return meta;
+}
+
+function validateMeta(meta: EpMeta) {
+	if (
+		meta.totalVideoDuration !==
+		meta.totalFastForwardFrames +
+			meta.totalSafeAcceleratedFrames +
+			meta.totalNormalSpeedFrames
+	) {
+		throw new Error(`sum of frames does not match`);
+	}
 }

@@ -1,14 +1,28 @@
-import {Folder, Composition, staticFile} from 'remotion';
-import {ClipPreview} from '../ClipPreview';
-import {VIDEO_CONFIG} from '../constants';
+import {Folder, Internals} from 'remotion';
+import {SPLASH_DURATION_S, VIDEO_CONFIG} from '../constants';
 import {EP_DURATION_FRAMES} from '../Episodes/constants';
-import { Ep02 } from '../Episodes/Ep02';
-import { Editor } from '../Episodes/Standard/Editor';
+import {Editor} from '../Episodes/Standard/Editor';
 
 export const Editors = () => {
+	const isPreview = Internals.useRemotionEnvironment() === 'preview';
 	return (
 		<Folder name="Editors">
-			<Editor component={Ep02} id="Ep02"/>
+			{isPreview && (
+				<>
+					<Editor
+						path="02/Ep02.yaml"
+						id="Ep02"
+						targetContentDuration={
+							EP_DURATION_FRAMES - SPLASH_DURATION_S * VIDEO_CONFIG.fps
+						}
+					/>
+					{/* <Editor
+						path="trailer.yaml"
+						id="Trailer"
+						targetContentDuration={2867 + SPLASH_DURATION_S * VIDEO_CONFIG.fps}
+					/> */}
+				</>
+			)}
 		</Folder>
 	);
 };

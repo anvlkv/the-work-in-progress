@@ -1,11 +1,8 @@
 import {AbsoluteFill, Img, staticFile} from 'remotion';
 import {COLOR_1, COLOR_3, VIDEO_CONFIG} from '../constants';
+import { SingleSlideProps } from '../Episodes/Standard/types';
 
-export interface Props {
-	title?: string;
-	text?: string;
-	img?: string;
-}
+export type Props = Omit<SingleSlideProps, 'commentary'>
 
 export const PresentationClip: React.FC<Props> = ({title = 'the WIP by twopack.gallery', text, img}) => {
 	const packsPng = staticFile('twopacks.png')
@@ -42,7 +39,7 @@ export const PresentationClip: React.FC<Props> = ({title = 'the WIP by twopack.g
 					<Img
 						src={packsPng}
 						alt="twopacks"
-						style={{width: 'fit-content', marginLeft: '-3em', height: '80%'}}
+						style={{maxWidth: 'fit-content', marginLeft: '-3em', height: '80%'}}
 					/>
 					<div
 						style={{

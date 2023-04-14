@@ -1,17 +1,14 @@
 import {Audio} from 'remotion';
-import { phrasesToTTsUrl } from '../phrasesToSpeech';
+import { phrasesToTTsUrl, TTSEntry } from '../phrasesToSpeech';
 import {TalkingHead} from './TalkingHead';
 
-export const SpeakingHead: React.FC<{text: string; ssml?: boolean, ttsUrl?: string}> = ({
-	text,
-	ssml = false,
-	ttsUrl
+export const SpeakingHead: React.FC<{speech: TTSEntry}> = ({
+	speech
 }) => {
-	const speech = ttsUrl || phrasesToTTsUrl(text, ssml);
+	const url = phrasesToTTsUrl(speech);
 	return (
 		<>
-			<TalkingHead fileName={speech} />
-			<Audio src={speech} title={`speech: ${text.length}`}/>
+			<TalkingHead fileName={url} />
 		</>
 	);
 };

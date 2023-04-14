@@ -22,7 +22,6 @@ export function phrasesToTTsUrl(
 	textToSpeech: TTSEntry | string,
 	ssml = true
 ) {
-	// console.log(phrasesToSpeech(textToSpeech as []))
 	return `http://localhost:5500/api/tts?voice=${encodeURIComponent(
 		'espeak:en#en-us'
 	)}&text=${encodeURIComponent(

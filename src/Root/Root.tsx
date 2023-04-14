@@ -13,19 +13,12 @@ const {durationInFrames, ...defaultProps} = getInputProps();
 export const RemotionRoot: React.FC = () => {
 	return (
 		<>
-			<Composition
+			{/* <Composition
 				id="TrailerEp"
 				component={Trailer}
-				durationInFrames={1853 + SPLASH_DURATION_S * VIDEO_CONFIG.fps * 2}
+				durationInFrames={2867 + SPLASH_DURATION_S * VIDEO_CONFIG.fps}
 				{...VIDEO_CONFIG}
-			/>
-			<Composition
-				id="Ep01"
-				component={Ep01}
-				durationInFrames={durationInFrames || EP_DURATION_FRAMES}
-				{...VIDEO_CONFIG}
-				defaultProps={defaultProps}
-			/>
+			/> */}
 			<Composition
 				id="Ep02"
 				component={Ep02}

@@ -1,6 +1,6 @@
 import {useCurrentFrame} from 'remotion';
+import { FrameMapping } from '../Episodes/Standard/types';
 import {PresentationClip, Props as ClipProps} from './PresentationClip';
-import {FrameMapping} from '../Video/VideoClip';
 
 export type Props = {script: FrameMapping<ClipProps>[]};
 

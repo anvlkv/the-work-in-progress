@@ -1,13 +1,13 @@
 import yaml from 'yaml';
+import fs from 'fs';
 import deepEqual from 'deep-equal';
 import {
 	EpisodeEntryProps,
 	EpisodeSlidesProps,
 	EpisodeVideoProps as OptionalVideoProps,
 	SingleSlideProps,
-} from './types';
-import {useMemo} from 'react';
-import {TTSEntry} from '../../phrasesToSpeech';
+} from '../Episodes/Standard/types';
+import {TTSEntry} from '../phrasesToSpeech';
 
 type EpisodeVideoProps = OptionalVideoProps & {
 	props: Required<Omit<OptionalVideoProps['props'], 'endAt' | 'startFrom'>>;
@@ -227,90 +227,101 @@ function parseVideo(
 	}
 }
 
-export function useScriptFromYaml(content: string): EpisodeEntryProps[] {
-	return useMemo(() => {
-		const parsed = yaml.parse(content) as {
-			[file: string]: VideoScript | SlidesScript;
-		};
+export function scriptFromYaml(content: string): EpisodeEntryProps[] {
+	const parsed = yaml.parse(content) as {
+		[file: string]: VideoScript | SlidesScript;
+	};
 
-		const videoOps = {
-			currentBlur: new Map<string, [number, number]>(),
-			currentVolume: false as false | [from: number, v: number],
-			currentFF: false as false | number,
-			currentNS: false as false | number,
-		};
+	const videoOps = {
+		currentBlur: new Map<string, [number, number]>(),
+		currentVolume: false as false | [from: number, v: number],
+		currentFF: false as false | number,
+		currentNS: false as false | number,
+	};
 
-		return Object.entries(parsed).reduce<EpisodeEntryProps[]>(
-			(
-				acc: EpisodeEntryProps[],
-				[file, script]: [string, SlidesScript | VideoScript]
-			) => {
-				if (/.*\.(mp4|webm|mov)$/.test(file)) {
-					const defaultEntry = {
-						type: 'video',
-						props: {
-							src: file,
-							commentary: [],
-							blur:
-								videoOps.currentBlur.size === 0
-									? []
-									: Array.from(videoOps.currentBlur.keys()).map((key) => {
-											const props = blurGeometryFromKey(key);
-											return [0, Infinity, props];
-									  }),
-							fastForward:
-								videoOps.currentFF === false ? [] : [[0, Infinity, true]],
-							forceNormalSpeed:
-								videoOps.currentNS === false ? [] : [[0, Infinity, true]],
-							volume:
-								videoOps.currentVolume === false
-									? []
-									: [[0, Infinity, videoOps.currentVolume[1]]],
-						},
-					} as EpisodeVideoProps;
+	return Object.entries(parsed).reduce<EpisodeEntryProps[]>(
+		(
+			acc: EpisodeEntryProps[],
+			[file, script]: [string, SlidesScript | VideoScript]
+		) => {
+			if (/.*\.(mp4|webm|mov)$/.test(file)) {
+				const defaultEntry = {
+					type: 'video',
+					props: {
+						src: file,
+						commentary: [],
+						blur:
+							videoOps.currentBlur.size === 0
+								? []
+								: Array.from(videoOps.currentBlur.keys()).map((key) => {
+										const props = blurGeometryFromKey(key);
+										return [0, Infinity, props];
+									}),
+						fastForward:
+							videoOps.currentFF === false ? [] : [[0, Infinity, true]],
+						forceNormalSpeed:
+							videoOps.currentNS === false ? [] : [[0, Infinity, true]],
+						volume:
+							videoOps.currentVolume === false
+								? []
+								: [[0, Infinity, videoOps.currentVolume[1]]],
+					},
+				} as EpisodeVideoProps;
 
-					videoOps.currentFF =
-						videoOps.currentFF === false ? videoOps.currentFF : 0;
-					videoOps.currentNS =
-						videoOps.currentNS === false ? videoOps.currentNS : 0;
-					videoOps.currentVolume =
-						videoOps.currentVolume === false
-							? videoOps.currentVolume
-							: [0, videoOps.currentVolume[1]];
+				videoOps.currentFF =
+					videoOps.currentFF === false ? videoOps.currentFF : 0;
+				videoOps.currentNS =
+					videoOps.currentNS === false ? videoOps.currentNS : 0;
+				videoOps.currentVolume =
+					videoOps.currentVolume === false
+						? videoOps.currentVolume
+						: [0, videoOps.currentVolume[1]];
 
-					const vScript = script as VideoScript;
+				const vScript = script as VideoScript;
 
-					const entry =
-						vScript && Object.keys(vScript).length
-							? Object.entries(vScript).reduce(
-									(acc, [key, entry]) => parseVideo(entry, key, acc, videoOps),
-									defaultEntry
-							  )
-							: defaultEntry;
+				const entry =
+					vScript && Object.keys(vScript).length
+						? Object.entries(vScript).reduce(
+								(acc, [key, entry]) => parseVideo(entry, key, acc, videoOps),
+								defaultEntry
+							)
+						: defaultEntry;
 
-					spreadVideoOps(entry, videoOps);
-					acc.push(entry);
-				} else {
-					const sScript = script as SlidesScript;
-					const last = acc[acc.length - 1];
-					const slideEntry = {
-						img: /.*\.(png|jpeg|jpg|svg)$/.test(file) ? file : undefined,
-						commentary: sScript.tts,
-						text: sScript.text,
-						title: sScript.title,
-					};
-					if (last && last.type === 'slides') {
-						last.props.push(slideEntry);
-					} else {
-						acc.push({
-							type: 'slides',
-							props: [slideEntry] as SingleSlideProps[],
-						} as EpisodeSlidesProps);
-					}
-				}
-				return acc;
-			},
-			[] as EpisodeEntryProps[]
-		);
-	}, [content]);
+				spreadVideoOps(entry, videoOps);
+				acc.push(entry);
+			} else {
+				const sScript = script as SlidesScript;
+				const slideEntry: SingleSlideProps = {
+					id: file,
+					img: /.*\.(png|jpeg|jpg|svg)$/.test(file) ? file : undefined,
+					commentary: sScript.tts,
+					text: sScript.text,
+					title: sScript.title,
+				};
+
+				acc.push({
+					type: 'slides',
+					props: slideEntry,
+				} as EpisodeSlidesProps);
+			}
+			return acc;
+		},
+		[] as EpisodeEntryProps[]
+	);
+}
+
+export function scriptFromFile(path: string) {
+	return new Promise<EpisodeEntryProps[]>((resolve, reject) => {
+		fs.readFile(`./public/${path}`, {encoding: 'utf-8'}, (e, d) => {
+			if (e) {
+				reject(e)
+			}
+			try {
+				resolve(scriptFromYaml(d))
+			}
+			catch(e) {
+				reject (e)
+			}
+		})
+	})
 }
