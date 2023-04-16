@@ -1,13 +1,10 @@
-# Remotion video
+# the work in progress by twopack.gallery
 
-<p align="center">
-  <a href="https://github.com/remotion-dev/logo">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-dark.gif">
-      <img alt="Animated Remotion Logo" src="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-light.gif">
-    </picture>
-  </a>
-</p>
+this been used so far to edit the podcast
+
+checkout the podcast and our other works in our [patreon feed](https://www.patreon.com/twopack_gallery)
+
+## Remotion video
 
 Welcome to your Remotion project!
 
