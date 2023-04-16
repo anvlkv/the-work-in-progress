@@ -349,6 +349,7 @@ function computeAcceleration(
 		}
 	}
 
+	
 	return {
 		safeAcceleration,
 		fastForwardAcceleration,
@@ -365,6 +366,7 @@ function makeCompositionSet(
 	const compositionSet = new Set<StreamEntry>();
 	const frames = Array.from(framesMap.values());
 
+	console.log(safeAcceleration, fastForwardAcceleration)
 	let f = 0;
 	while (compositionSet.size < targetDuration) {
 		const streams = frames[f];
@@ -391,10 +393,10 @@ function makeCompositionSet(
 				(frameType === VideoFrameType.Normal
 					? 1
 					: frameType === VideoFrameType.Accelerated
-					? safeAcceleration
+					? Math.floor(safeAcceleration)
 					: fastForwardAcceleration)
 			);
-
+			console.log(advanceBy)
 			f += advanceBy;
 		}
 	}

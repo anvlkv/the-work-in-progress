@@ -233,14 +233,16 @@ export async function computeEpisodeMeta(
 			case 'video':
 				entriesMeta.push(
 					await getVideoMetadata(`./public/${entry.props.src}`).then(
-						async (d) => [
-							d,
-							await Promise.all(
-								entry.props.commentary.map(({tts}) =>
-									getTTSDurationInSeconds(tts)
-								)
-							),
-						]
+						async (d) => {
+							const dds = []
+							for (const {tts} of entry.props.commentary) {
+								dds.push(await getTTSDurationInSeconds(tts))
+							}
+							return [
+								d,
+								dds,
+							]
+						}
 					)
 				);
 				break;
@@ -349,7 +351,7 @@ export async function computeEpisodeMeta(
 					]);
 					runningTotals.totalSlidesDuration++;
 				});
-				slidesDuration += durationInSeconds;
+				slidesDuration += framesMap.size;
 				// });
 
 				break;

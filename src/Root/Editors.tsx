@@ -10,8 +10,8 @@ export const Editors = () => {
 			{isPreview && (
 				<>
 					<Editor
-						path="02/Ep02.yaml"
-						id="Ep02"
+						path="05/Ep05.yaml"
+						id="Ep05"
 						targetContentDuration={
 							EP_DURATION_FRAMES - SPLASH_DURATION_S * VIDEO_CONFIG.fps
 						}
