@@ -7,9 +7,11 @@
 	},
 	"typescript.enablePromptUseWorkspaceTsdk": true,
 	"cSpell.words": [
+		"documentalist",
 		"Offthread",
 		"POMODORO",
 		"Rudrabha",
 		"webm"
-	]
+	],
+	"rust-analyzer.showUnlinkedFileNotification": false
 }

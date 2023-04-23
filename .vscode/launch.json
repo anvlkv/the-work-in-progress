@@ -5,13 +5,32 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "type": "lldb",
+      "request": "launch",
+      "name": "debug rust",
+      "cargo": {
+        "args": [
+          "build",
+          "--manifest-path=./documentalist/Cargo.toml",
+          "--bin=documentalist",
+          "--package=documentalist"
+        ],
+        "filter": {
+          "name": "documentalist",
+          "kind": "bin"
+      }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}/documentalist"
+    },
+    {
       "type": "node",
       "request": "launch",
       "name": "Debug api",
       "skipFiles": [
         "<node_internals>/**"
       ],
-      "program": "${workspaceFolder}/src/server/index.ts",
+      "program": "${workspaceFolder}/remotion/src/server/index.ts",
       "runtimeArgs": [
         "-r",
         "ts-node/register"
