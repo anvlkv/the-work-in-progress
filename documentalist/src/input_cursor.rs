@@ -147,7 +147,7 @@ impl<'s> InputCursor<'s> {
         Ok(())
     }
 
-    pub fn visit(mut self, visitor: &mut dyn InputCursorVisitor) -> Result<(), Error> {
+    pub fn take_visitor(mut self, visitor: &mut dyn InputCursorVisitor) -> Result<(), Error> {
         let mut packet_iter = self.input.packets();
         while let Some((stream, mut packet)) = packet_iter.next() {
             let stream_index = stream.index();
@@ -345,7 +345,7 @@ mod tests {
             subtitle_frame_count: 0,
             end: false
         };
-        cursor.visit(&mut visitor).unwrap();
+        cursor.take_visitor(&mut visitor).unwrap();
         assert_eq!(visitor.video_frame_count, 90);
         assert_eq!(visitor.audio_frame_count, 0);
         assert_eq!(visitor.subtitle_frame_count, 0);
@@ -362,7 +362,7 @@ mod tests {
             subtitle_frame_count: 0,
             end: false
         };
-        cursor.visit(&mut visitor).unwrap();
+        cursor.take_visitor(&mut visitor).unwrap();
         assert_eq!(visitor.video_frame_count, 90);
         assert_eq!(visitor.audio_frame_count, 141);
         assert_eq!(visitor.subtitle_frame_count, 0);

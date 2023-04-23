@@ -105,7 +105,7 @@ mod tests {
         let mut output = ffmpeg::format::output(&output_path).expect("failed to open output");
         let mut transcoder = SingleInputTranscoder::new(&mut output, output_path, meta.clone());
         input_cursor
-            .visit(&mut transcoder)
+            .take_visitor(&mut transcoder)
             .expect("failed to transcode");
         assert_eq!(transcoder.video_frame_count, 90);
         assert_eq!(transcoder.audio_frame_count, 141);
@@ -129,7 +129,7 @@ mod tests {
         let mut output = ffmpeg::format::output(&output_path).expect("failed to open output");
         let mut transcoder = SingleInputTranscoder::new(&mut output, output_path, meta.clone());
         input_cursor
-            .visit(&mut transcoder)
+            .take_visitor(&mut transcoder)
             .expect("failed to transcode");
         assert_eq!(transcoder.video_frame_count, 180);
         assert_eq!(transcoder.audio_frame_count, 282);
