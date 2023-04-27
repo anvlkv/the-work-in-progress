@@ -10,6 +10,7 @@ pub struct VideoStreamMeta {
     pub height: u32,
     pub frames: i64,
     pub rate: Rational,
+    pub frame_rate: Option<Rational>,
     pub stream_time_base: Rational,
     pub decoder_time_base: Rational,
     pub aspect_ratio: Rational,
@@ -114,9 +115,10 @@ impl<'s> InputCursor<'s> {
         let mut frame = frame::Video::empty();
         while decoder.receive_frame(&mut frame).is_ok() {
             let ts = frame.timestamp();
+            // println!("frame ts{:?}", ts);
             frame.set_pts(ts);
             frame.set_kind(picture::Type::None);
-            visitor.visit_video_frame(&frame)?;
+            visitor.visit_video_frame(&frame, decoder.time_base())?;
         }
         Ok(())
     }
@@ -129,7 +131,7 @@ impl<'s> InputCursor<'s> {
         while decoder.receive_frame(&mut frame).is_ok() {
             let ts = frame.timestamp();
             frame.set_pts(ts);
-            visitor.visit_audio_frame(&frame)?;
+            visitor.visit_audio_frame(&frame, decoder.time_base())?;
         }
         Ok(())
     }
@@ -142,7 +144,7 @@ impl<'s> InputCursor<'s> {
         while decoder.receive_frame(&mut frame).is_ok() {
             let ts = frame.timestamp();
             frame.set_pts(ts);
-            visitor.visit_subtitle_frame(&frame)?;
+            visitor.visit_subtitle_frame(&frame, decoder.time_base())?;
         }
         Ok(())
     }
@@ -152,6 +154,7 @@ impl<'s> InputCursor<'s> {
         while let Some((stream, mut packet)) = packet_iter.next() {
             let stream_index = stream.index();
             if stream_index == self.video_stream_index.unwrap() {
+                // println!("pts input: {:?}", packet.pts());
                 let mut decoder = self.video_decoder.take().unwrap();
                 packet.rescale_ts(stream.time_base(), decoder.time_base());
                 decoder.send_packet(&packet)?;
@@ -187,7 +190,11 @@ impl<'s> InputCursor<'s> {
             Self::receive_decoded_subtitle_frames(&mut decoder, visitor)?;
             self.subtitle_decoder = Some(decoder);
         }
-        visitor.visit_eoi()?;
+        visitor.visit_eoi((
+            self.video_decoder.map(|d| d.time_base()),
+            self.audio_decoder.map(|d| d.time_base()),
+            self.subtitle_decoder.map(|d| d.time_base()),
+        ))?;
         Ok(())
     }
 
@@ -207,7 +214,6 @@ impl<'s> InputCursor<'s> {
             let frames: i64 = stream.frames();
             let rate: Rational = stream.rate();
             let time_base: Rational = stream.time_base();
-            let decoder_time_base= rate.invert();
 
             let codec =
                 ffmpeg::codec::context::Context::from_parameters(stream.parameters()).unwrap();
@@ -219,6 +225,8 @@ impl<'s> InputCursor<'s> {
                     let height: u32 = video.height();
                     let aspect_ratio: Rational = video.aspect_ratio();
                     let pixel_format: ffmpeg::format::Pixel = video.format();
+                    let decoder_time_base =
+                        self.video_decoder.as_ref().unwrap_or(&video).time_base();
                     meta.video = Some(VideoStreamMeta {
                         width,
                         height,
@@ -228,7 +236,8 @@ impl<'s> InputCursor<'s> {
                         rate,
                         stream_time_base: time_base,
                         codec_id,
-                        decoder_time_base
+                        decoder_time_base,
+                        frame_rate: video.frame_rate(),
                     });
                 }
             } else if codec.medium() == ffmpeg::media::Type::Audio {
@@ -238,11 +247,8 @@ impl<'s> InputCursor<'s> {
                     let sample_format: ffmpeg::format::Sample = audio.format();
                     let channel_layout: ffmpeg::channel_layout::ChannelLayout =
                         audio.channel_layout();
-                        let decoder_time_base= self
-                            .audio_decoder
-                            .as_ref()
-                            .unwrap_or(&audio)
-                            .time_base();
+                    let decoder_time_base =
+                        self.audio_decoder.as_ref().unwrap_or(&audio).time_base();
                     meta.audio = Some(AudioStreamMeta {
                         rate,
                         bit_rate,
@@ -251,14 +257,14 @@ impl<'s> InputCursor<'s> {
                         channel_layout,
                         frames,
                         codec_id,
-                        decoder_time_base
+                        decoder_time_base,
                     });
                 }
             } else if codec.medium() == ffmpeg::media::Type::Subtitle {
                 let codec_id = codec.id();
                 if let Ok(subtitle) = codec.decoder().subtitle() {
                     let bit_rate = subtitle.bit_rate();
-                    let decoder_time_base= self
+                    let decoder_time_base = self
                         .subtitle_decoder
                         .as_ref()
                         .unwrap_or(&subtitle)
@@ -268,7 +274,7 @@ impl<'s> InputCursor<'s> {
                         frames,
                         stream_time_base: time_base,
                         bit_rate,
-                        decoder_time_base
+                        decoder_time_base,
                     });
                 }
             }
@@ -278,10 +284,25 @@ impl<'s> InputCursor<'s> {
 }
 
 pub trait InputCursorVisitor {
-    fn visit_video_frame(&mut self, frame: &ffmpeg::frame::Video) -> Result<(), Error>;
-    fn visit_audio_frame(&mut self, frame: &ffmpeg::frame::Audio) -> Result<(), Error>;
-    fn visit_subtitle_frame(&mut self, frame: &ffmpeg::Frame) -> Result<(), Error>;
-    fn visit_eoi(&mut self) -> Result<(), Error> ;
+    fn visit_video_frame(
+        &mut self,
+        frame: &ffmpeg::frame::Video,
+        time_base: Rational,
+    ) -> Result<(), Error>;
+    fn visit_audio_frame(
+        &mut self,
+        frame: &ffmpeg::frame::Audio,
+        time_base: Rational,
+    ) -> Result<(), Error>;
+    fn visit_subtitle_frame(
+        &mut self,
+        frame: &ffmpeg::Frame,
+        time_base: Rational,
+    ) -> Result<(), Error>;
+    fn visit_eoi(
+        &mut self,
+        time_base: (Option<Rational>, Option<Rational>, Option<Rational>),
+    ) -> Result<(), Error>;
 }
 
 #[cfg(test)]
@@ -292,26 +313,38 @@ mod tests {
         video_frame_count: usize,
         audio_frame_count: usize,
         subtitle_frame_count: usize,
-        end: bool
+        end: bool,
     }
 
     impl InputCursorVisitor for TestVisitor {
-        fn visit_video_frame(&mut self, _frame: &ffmpeg::frame::Video) -> Result<(), Error> {
+        fn visit_video_frame(
+            &mut self,
+            _frame: &ffmpeg::frame::Video,
+            _time_base: Rational,
+        ) -> Result<(), Error> {
             self.video_frame_count += 1;
             Ok(())
         }
 
-        fn visit_audio_frame(&mut self, _frame: &ffmpeg::frame::Audio) -> Result<(), Error> {
+        fn visit_audio_frame(
+            &mut self,
+            _frame: &ffmpeg::frame::Audio,
+            _time_base: Rational,
+        ) -> Result<(), Error> {
             self.audio_frame_count += 1;
             Ok(())
         }
 
-        fn visit_subtitle_frame(&mut self, _frame: &ffmpeg::Frame) -> Result<(), Error> {
+        fn visit_subtitle_frame(
+            &mut self,
+            _frame: &ffmpeg::Frame,
+            _time_base: Rational,
+        ) -> Result<(), Error> {
             self.subtitle_frame_count += 1;
             Ok(())
         }
 
-        fn visit_eoi(&mut self) -> Result<(), Error> {
+        fn visit_eoi(&mut self, _: (Option<Rational>, Option<Rational>, Option<Rational>)) -> Result<(), Error> {
             self.end = true;
             Ok(())
         }
@@ -343,7 +376,7 @@ mod tests {
             video_frame_count: 0,
             audio_frame_count: 0,
             subtitle_frame_count: 0,
-            end: false
+            end: false,
         };
         cursor.take_visitor(&mut visitor).unwrap();
         assert_eq!(visitor.video_frame_count, 90);
@@ -360,7 +393,7 @@ mod tests {
             video_frame_count: 0,
             audio_frame_count: 0,
             subtitle_frame_count: 0,
-            end: false
+            end: false,
         };
         cursor.take_visitor(&mut visitor).unwrap();
         assert_eq!(visitor.video_frame_count, 90);
@@ -374,7 +407,7 @@ mod tests {
         let mut input = ffmpeg::format::input(&"tests/fixtures/short.mp4").unwrap();
         let cursor = InputCursor::new(&mut input).unwrap();
         let meta = cursor.meta();
-        println!("{:?}", meta);
+        // println!("{:?}", meta);
         match meta.video {
             Some(meta_video) => {
                 assert_eq!(meta_video.width, 1280);

@@ -1,4 +1,4 @@
-use ffmpeg::Dictionary;
+use ffmpeg::{Dictionary, Rational};
 
 use crate::error::Error;
 use crate::input_cursor::{InputCursorVisitor, InputMeta};
@@ -25,7 +25,7 @@ impl<'s> SingleInputTranscoder<'s> {
                     video.width,
                     video.height,
                     video.rate,
-                    video.stream_time_base,
+                    video.frame_rate,
                     video.aspect_ratio,
                     video.pixel_format,
                     parse_opts(DEFAULT_X264_OPTS.to_owned()).unwrap(),
@@ -36,7 +36,6 @@ impl<'s> SingleInputTranscoder<'s> {
             output_cursor
                 .open_audio_encoder(
                     audio.rate,
-                    audio.stream_time_base,
                     audio.channel_layout,
                     audio.bit_rate,
                     audio.bit_rate,
@@ -45,6 +44,7 @@ impl<'s> SingleInputTranscoder<'s> {
                 )
                 .expect("failed to open video encoder");
         }
+        println!("meta: {:#?}", input_meta);
         let mut meta = Dictionary::new();
         meta.set("comment", "documentalist test");
         meta.set("encoder", "Lavf58.76.100");
@@ -52,9 +52,8 @@ impl<'s> SingleInputTranscoder<'s> {
         meta.set("minor_version", "512");
         meta.set("compatible_brands", "isomiso2avc1mp41");
         output_cursor
-            .open_file(output_path, meta)
+            .open_file(meta)
             .expect("failed to open output file");
-
         Self {
             output_cursor,
             meta: input_meta,
@@ -66,30 +65,32 @@ impl<'s> SingleInputTranscoder<'s> {
 }
 
 impl<'s> InputCursorVisitor for SingleInputTranscoder<'s> {
-    fn visit_video_frame(&mut self, frame: &ffmpeg::frame::Video) -> Result<(), Error> {
+    fn visit_video_frame(&mut self, frame: &ffmpeg::frame::Video, time_base: Rational) -> Result<(), Error> {
         self.video_frame_count += 1;
         self.output_cursor
-            .accept_video_frame(frame, self.meta.video.as_ref().unwrap().decoder_time_base)
+            .accept_video_frame(frame, time_base)
     }
-    fn visit_audio_frame(&mut self, frame: &ffmpeg::frame::Audio) -> Result<(), Error> {
+    fn visit_audio_frame(&mut self, frame: &ffmpeg::frame::Audio, time_base: Rational) -> Result<(), Error> {
         self.audio_frame_count += 1;
         self.output_cursor
-            .accept_audio_frame(frame, self.meta.audio.as_ref().unwrap().decoder_time_base)
+            .accept_audio_frame(frame, time_base)
     }
 
-    fn visit_subtitle_frame(&mut self, frame: &ffmpeg::Frame) -> Result<(), Error> {
+    fn visit_subtitle_frame(&mut self, frame: &ffmpeg::Frame, time_base: Rational) -> Result<(), Error> {
         self.subtitle_frame_count += 1;
         self.output_cursor
-            .accept_subtitle_frame(frame, self.meta.subtitle.as_ref().unwrap().decoder_time_base)
+            .accept_subtitle_frame(frame, time_base)
     }
 
-    fn visit_eoi(&mut self) -> Result<(), Error> {
-        self.output_cursor.close()
+    fn visit_eoi(&mut self, tbs: (Option<Rational>, Option<Rational>, Option<Rational>)) -> Result<(), Error> {
+        self.output_cursor.close(tbs)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use ffmpeg::format;
+
     use crate::input_cursor::InputCursor;
 
     use super::*;
@@ -111,18 +112,20 @@ mod tests {
         assert_eq!(transcoder.audio_frame_count, 141);
         assert_eq!(transcoder.subtitle_frame_count, 0);
 
-        let mut input =
-            ffmpeg::format::input(&output_path).expect("failed to open input");
-        let mut input_cursor = InputCursor::new(&mut input).expect("failed to create input cursor");
-        let meta = input_cursor.meta();
-        println!("output metadata: {:#?}", meta);
+        // let mut input =
+        //     ffmpeg::format::input(&output_path).expect("failed to open input");
+        // let mut input_cursor = InputCursor::new(&mut input).expect("failed to create input cursor");
+        // let meta = input_cursor.meta();
+        // println!("output metadata: {:#?}", meta);
     }
 
     #[test]
     fn it_transcodes_one_longer_file() {
         let output_path = "tests/out/transcoded.mp4";
+        let input_path = "tests/fixtures/repeat.mp4";
         let mut input =
-            ffmpeg::format::input(&"tests/fixtures/repeat.mp4").expect("failed to open input");
+            ffmpeg::format::input(&input_path).expect("failed to open input");
+        format::context::input::dump(&input, 0, Some(&input_path));
         let mut input_cursor = InputCursor::new(&mut input).expect("failed to create input cursor");
         let meta = input_cursor.meta();
         println!("input metadata: {:#?}", meta);
@@ -135,10 +138,10 @@ mod tests {
         assert_eq!(transcoder.audio_frame_count, 282);
         assert_eq!(transcoder.subtitle_frame_count, 0);
 
-        let mut input =
-            ffmpeg::format::input(&output_path).expect("failed to open input");
-        let mut input_cursor = InputCursor::new(&mut input).expect("failed to create input cursor");
-        let meta = input_cursor.meta();
-        println!("output metadata: {:#?}", meta);
+        // let mut input =
+        //     ffmpeg::format::input(&output_path).expect("failed to open input");
+        // let mut input_cursor = InputCursor::new(&mut input).expect("failed to create input cursor");
+        // let meta = input_cursor.meta();
+        // println!("output metadata: {:#?}", meta);
     }
 }
