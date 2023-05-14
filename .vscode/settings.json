@@ -1,16 +1,33 @@
 {
 	"editor.tabSize": 2,
-	"typescript.tsdk": "node_modules/typescript/lib",
+	"typescript.tsdk": "remotion-video/node_modules/typescript/lib",
 	"editor.codeActionsOnSave": {
 		"source.organizeImports": false,
 		"source.fixAll": true
 	},
 	"typescript.enablePromptUseWorkspaceTsdk": true,
 	"cSpell.words": [
+		"appkit",
+		"audioconvert",
+		"autoaudiosink",
+		"autovideosink",
+		"canonicalize",
+		"decodebin",
 		"documentalist",
+		"encodebin",
+		"filesink",
+		"filesrc",
+		"matroska",
 		"Offthread",
+		"pbutils",
 		"POMODORO",
 		"Rudrabha",
+		"streamsynchronizer",
+		"taginject",
+		"taglist",
+		"theora",
+		"videoconvert",
+		"vorbis",
 		"webm"
 	],
 	"rust-analyzer.showUnlinkedFileNotification": false
