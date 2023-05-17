@@ -26,7 +26,7 @@ use gst_pbutils::{self, prelude::*};
 ///
 /// pipe = dest.from_src_pipe(pipe).expect("Failed to create pipeline from feed.");
 ///
-/// assert_eq!(pipe.pipeline.children().len(), 6);
+/// assert_eq!(pipe.pipeline.children().len(), 4);
 ///
 /// ```
 #[derive(Clone, Debug, Hash)]
@@ -182,6 +182,7 @@ impl FromSrcPipe for Destination {
             format!("destination_{:x}", hasher.finish())
         };
 
+
         let encodebin = gst::ElementFactory::make("encodebin")
             .name(format!("encodebin_{}", name))
             .build()?;
@@ -217,52 +218,23 @@ impl FromSrcPipe for Destination {
         gst::Element::link_many(&[&encodebin, &filesink])?;
 
         {
-            // let template = encodebin
-            //     .pad_template("audio_%u")
-            //     .expect("No audio pad template");
-
-            // let enc_sink_pad = gst::Pad::from_template(&template, Some("audio_0"));
-            // encodebin.add_pad(&enc_sink_pad).expect("Failed to add audio pad");
             let enc_sink_pad = encodebin
                 .request_pad_simple("audio_%u")
                 .expect("Could not get audio pad from encodebin");
 
-            let queue = gst::ElementFactory::make("queue")
-                .name(format!("audio_queue_{}", name))
-                .build()?;
             let src_pad = a_id_el.static_pad("src").unwrap();
-            let queue_sink_pad = queue.static_pad("sink").unwrap();
-            let queue_src_pad = queue.static_pad("src").unwrap();
-            pipe.pipeline.add(&queue)?;
-            queue.sync_state_with_parent()?;
 
-            src_pad.link(&queue_sink_pad)?;
-            queue_src_pad.link(&enc_sink_pad)?;
+            src_pad.link(&enc_sink_pad)?;
         }
 
         {
-            // let template = encodebin
-            //     .pad_template("video_%u")
-            //     .expect("No video pad template");
-
-            // let enc_sink_pad = gst::Pad::from_template(&template, Some("video_0"));
-            // encodebin.add_pad(&enc_sink_pad).expect("Failed to add video pad");
-
             let enc_sink_pad = encodebin
                 .request_pad_simple("video_%u")
                 .expect("Could not get video pad from encodebin");
 
-            let queue = gst::ElementFactory::make("queue")
-                .name(format!("video_queue_{}", name))
-                .build()?;
             let src_pad = v_id_el.static_pad("src").unwrap();
-            let queue_sink_pad = queue.static_pad("sink").unwrap();
-            let queue_src_pad = queue.static_pad("src").unwrap();
-            pipe.pipeline.add(&queue)?;
-            queue.sync_state_with_parent()?;
 
-            src_pad.link(&queue_sink_pad)?;
-            queue_src_pad.link(&enc_sink_pad)?;
+            src_pad.link(&enc_sink_pad)?;
         }
         encodebin.sync_state_with_parent()?;
         filesink.sync_state_with_parent()?;
@@ -297,7 +269,7 @@ mod tests {
             .from_src_pipe(pipe)
             .expect("Failed to create pipeline from destination.");
 
-        assert_eq!(pipe.pipeline.children().len(), 6);
+        assert_eq!(pipe.pipeline.children().len(), 4);
     }
 
     #[test]
@@ -312,7 +284,7 @@ mod tests {
             .from_src_pipe(pipe)
             .expect("Failed to create pipeline from destination.");
 
-        assert_eq!(pipe.pipeline.children().len(), 6);
+        assert_eq!(pipe.pipeline.children().len(), 4);
     }
 
     #[test]
@@ -342,7 +314,7 @@ mod tests {
             .from_src_pipe(pipe)
             .expect("Failed to create pipeline from destination.");
 
-        assert_eq!(pipe.pipeline.children().len(), 6);
+        assert_eq!(pipe.pipeline.children().len(), 4);
     }
 
     #[test]
@@ -357,7 +329,7 @@ mod tests {
             .from_src_pipe(pipe)
             .expect("Failed to create pipeline from destination.");
 
-        assert_eq!(pipe.pipeline.children().len(), 6);
+        assert_eq!(pipe.pipeline.children().len(), 4);
     }
 
     #[test]
@@ -373,6 +345,6 @@ mod tests {
             .from_src_pipe(pipe)
             .expect("Failed to create pipeline from destination.");
 
-        assert_eq!(pipe.pipeline.children().len(), 6);
+        assert_eq!(pipe.pipeline.children().len(), 4);
     }
 }

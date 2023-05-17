@@ -28,7 +28,7 @@ use crate::{Connector, Entry, Pipe, ToSinkPipe};
 ///
 /// pipe = feed.to_sink_pipe(pipe).expect("Failed to create pipeline from feed.");
 ///
-/// assert_eq!(pipe.pipeline.children().len(), 20);
+/// assert_eq!(pipe.pipeline.children().len(), 21);
 ///
 ///
 /// ```
@@ -77,6 +77,10 @@ impl ToSinkPipe for Feed {
             .name(format!("audio_{}", name))
             .property("adjust-base", false)
             .build()?;
+        let multiqueue = gst::ElementFactory::make("multiqueue")
+            .name(format!("multiqueue_{}", name))
+            .property("sync-by-running-time", true)
+            .build()?;
         let synchronizer = gst::ElementFactory::make("streamsynchronizer")
             .name(format!("synchronizer_{}", name))
             .build()?;
@@ -90,6 +94,7 @@ impl ToSinkPipe for Feed {
         pipe.pipeline.add_many(&[
             &v_concat,
             &a_concat,
+            &multiqueue,
             &synchronizer,
             &video_identity,
             &audio_identity,
@@ -97,11 +102,14 @@ impl ToSinkPipe for Feed {
 
         v_concat.link_pads(Some("src"), &synchronizer, Some("sink_0"))?;
         a_concat.link_pads(Some("src"), &synchronizer, Some("sink_1"))?;
-        synchronizer.link_pads(Some("src_0"), &video_identity, Some("sink"))?;
-        synchronizer.link_pads(Some("src_1"), &audio_identity, Some("sink"))?;
-        v_concat.sync_state_with_parent()?;
-        a_concat.sync_state_with_parent()?;
-        synchronizer.sync_state_with_parent()?;
+        synchronizer.link_pads(Some("src_0"), &multiqueue, Some("sink_0"))?;
+        synchronizer.link_pads(Some("src_1"), &multiqueue, Some("sink_1"))?;
+        multiqueue.link_pads(Some("src_0"), &video_identity, Some("sink"))?;
+        multiqueue.link_pads(Some("src_1"), &audio_identity, Some("sink"))?;
+        
+        for el in [&v_concat, &a_concat, &synchronizer, &video_identity, &audio_identity, &multiqueue] {
+            el.sync_state_with_parent()?;
+        }
 
         for entry in entries {
             pipe = entry.to_sink_pipe(pipe)?;
@@ -137,6 +145,6 @@ mod tests {
         let pipe = feed
             .to_sink_pipe(Pipe::default())
             .expect("Failed to link from pipe.");
-        assert_eq!(pipe.pipeline.children().len(), 15);
+        assert_eq!(pipe.pipeline.children().len(), 16);
     }
 }

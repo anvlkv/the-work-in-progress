@@ -150,59 +150,31 @@ impl ToSinkPipe for Entry {
             .name(format!("taginject_{}", name))
             .property("tags", &self.0)
             .build()?;
-
         let decodebin = gst::ElementFactory::make("decodebin")
             .name(format!("decodebin_{}", name))
             .build()?;
-
-        pipe.pipeline.add_many(&[&filesrc, &tag, &decodebin])?;
-        gst::Element::link_many(&[&filesrc, &tag, &decodebin])?;
-
         let audio_identity = gst::ElementFactory::make("identity")
             .name(format!("audio_identity_{}", name))
             .build()?;
-
-        pipe.pipeline.add(&audio_identity)?;
-
         let video_identity = gst::ElementFactory::make("identity")
             .name(format!("video_identity_{}", name))
             .build()?;
 
-        pipe.pipeline.add(&video_identity)?;
+        pipe.pipeline.add_many(&[&filesrc, &tag, &decodebin, &audio_identity, &video_identity])?;
+        gst::Element::link_many(&[&filesrc, &tag, &decodebin])?;
+        
+        for el in [&audio_identity, &video_identity, &filesrc, &tag, &decodebin]{
+            el.sync_state_with_parent()?;
+        }
 
-        // Sync the identity elements with the parent pipeline
-        audio_identity.sync_state_with_parent()?;
-        video_identity.sync_state_with_parent()?;
         let audio_identity_weak = audio_identity.downgrade();
         let video_identity_weak = video_identity.downgrade();
+        let pipe_weak = pipe.pipeline.downgrade();
 
-        // Need to move a new reference into the closure.
-        // !!ATTENTION!!:
-        // It might seem appealing to use pipeline.clone() here, because that greatly
-        // simplifies the code within the callback. What this actually does, however, is creating
-        // a memory leak. The clone of a pipeline is a new strong reference on the pipeline.
-        // Storing this strong reference of the pipeline within the callback (we are moving it in!),
-        // which is in turn stored in another strong reference on the pipeline is creating a
-        // reference cycle.
-        // DO NOT USE pipeline.clone() TO USE THE PIPELINE WITHIN A CALLBACK
-        let pipeline_weak = pipe.pipeline.downgrade();
-        // Much of the following is the same code as in the decodebin example
-        // so if you want more information on that front, have a look there.
         decodebin.connect_pad_added(move |decodebin, decodebin_src_pad| {
-            // Here we temporarily retrieve a strong reference on the pipeline from the weak one
-            // we moved into this callback.
-            let pipeline = match pipeline_weak.upgrade() {
-                Some(pipeline) => pipeline,
-                None => panic!("failed to upgrade weak ref"),
-            };
-            let audio_identity = match audio_identity_weak.upgrade() {
-                Some(pipeline) => pipeline,
-                None => panic!("failed to upgrade weak ref"),
-            };
-            let video_identity = match video_identity_weak.upgrade() {
-                Some(pipeline) => pipeline,
-                None => panic!("failed to upgrade weak ref"),
-            };
+            let audio_identity = audio_identity_weak.upgrade().expect("failed to upgrade weak ref");
+            let video_identity = video_identity_weak.upgrade().expect("failed to upgrade weak ref");
+            let pipeline = pipe_weak.upgrade().expect("failed to upgrade weak ref");
 
             let (is_video, is_audio) = gst_element_type(decodebin, decodebin_src_pad);
 
@@ -249,19 +221,12 @@ impl ToSinkPipe for Entry {
                 )
                 .as_str(),
             );
+            for el in &[&queue, &convert, &id] {
+                el.sync_state_with_parent()
+                    .expect("Failed to sync element with parent");
+            }
 
-            queue
-                .sync_state_with_parent()
-                .expect("Failed to sync queue with parent");
-            convert
-                .sync_state_with_parent()
-                .expect("Failed to sync convert with parent");
-            id.sync_state_with_parent()
-                .expect("Failed to sync identity with parent");
         });
-
-
-
 
         let connector: Connector = Connector::new(video_identity, audio_identity);
 

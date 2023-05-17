@@ -12,17 +12,13 @@ fn main() {
         .expect("Failed to create pipeline from entry.");
 
 
-    pipe.pipeline_to_dot_file("examples/out/graphs/preview-entry-before.dot")
+    pipe.debug_to_dot_file("examples/out/graphs/preview-entry-before.dot")
         .expect("Failed to write dot file.");
 
     Preview::run(move || match Preview.play(pipe) {
-        Ok(pipe) => {
-            pipe.pipeline_to_dot_file("examples/out/graphs/preview-entry-after.dot")
-                .expect("Failed to write dot file.");
+        Ok(_) => {
         }
-        Err((pipe, err)) => {
-            pipe.pipeline_to_dot_file("examples/out/graphs/preview-entry-err.dot")
-                .expect("Failed to write dot file.");
+        Err(err) => {
             panic!("{}", err)
         }
     });

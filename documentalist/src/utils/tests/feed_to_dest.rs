@@ -15,17 +15,12 @@ fn it_should_play_single_entry() {
 
     assert_eq!(pipe.pipeline.children().len(), 5);
 
-    pipe.pipeline_to_dot_file("tests/out/graphs/entry.dot")
+    pipe.debug_to_dot_file("tests/out/graphs/entry.dot")
         .expect("Failed to write dot file.");
 
     Preview::run(move || match Preview.play(pipe) {
-        Ok(p) => {
-            p.pipeline_to_dot_file("tests/out/graphs/entry-after.dot")
-                .expect("Failed to write dot file.");
-        }
-        Err( (pipe, err)) => {
-            pipe.pipeline_to_dot_file("tests/out/graphs/entry-err.dot")
-                .expect("Failed to write dot file.");
+        Ok(_) => {}
+        Err(err) => {
             panic!("{}", err)
         }
     });
@@ -45,17 +40,12 @@ fn it_should_play_feed() {
         .to_sink_pipe(pipe)
         .expect("Failed to create pipeline from feed.");
 
-    pipe.pipeline_to_dot_file("tests/out/graphs/feed.dot")
+    pipe.debug_to_dot_file("tests/out/graphs/feed.dot")
         .expect("Failed to write dot file.");
 
     Preview::run(move || match Preview.play(pipe) {
-        Ok(pipe) => {
-            pipe.pipeline_to_dot_file("tests/out/graphs/preview-feed-after.dot")
-                .expect("Failed to write dot file.");
-        }
-        Err((pipe, err)) => {
-            pipe.pipeline_to_dot_file("tests/out/graphs/preview-feed-err.dot")
-                .expect("Failed to write dot file.");
+        Ok(_) => {}
+        Err(err) => {
             panic!("{}", err)
         }
     });
@@ -83,7 +73,7 @@ fn it_should_concat_clips() {
         .from_src_pipe(pipe)
         .expect("Failed to create pipeline from feed.");
 
-    pipe.pipeline_to_dot_file("tests/out/graphs/concat.dot")
+    pipe.debug_to_dot_file("tests/out/graphs/concat.dot")
         .expect("Failed to write dot file.");
 
     Preview::run(move || {

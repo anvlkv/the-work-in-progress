@@ -11,14 +11,8 @@ use gst::prelude::*;
 pub struct Preview;
 
 impl Preview {
-    pub fn play(self, pipe: Pipe) -> Result<Pipe, (Pipe, anyhow::Error)> {
-        let d_pipe= pipe.pipeline.downgrade();
-        self.try_play(pipe).map_err(|e| {
-            let pipe = d_pipe.upgrade().unwrap();
-            (Pipe::from(pipe), e)
-        })
-    }
-    fn try_play(self, pipe: Pipe) -> Result<Pipe> {
+
+    pub fn play(self, pipe: Pipe) -> Result<()> {
         let pipe = self.from_src_pipe(pipe)?;
         pipe.pipeline.set_state(gst::State::Playing)?;
 
@@ -96,7 +90,7 @@ impl Preview {
 
         pipe.pipeline.set_state(gst::State::Null)?;
 
-        Ok(pipe)
+        Ok(())
     }
 
     /// macOS has a specific requirement that there must be a run loop running on the main thread in
@@ -163,19 +157,21 @@ impl FromSrcPipe for Preview {
         let a_sink = gst::ElementFactory::make("autoaudiosink")
             .name("a_sink")
             .build()?;
-        pipe.pipeline.add_many(&[&v_sink, &a_sink])?;
+        let time_overlay = gst::ElementFactory::make("timeoverlay")
+            .name("time_overlay")
+            .build()?;
+
+        pipe.pipeline.add_many(&[&time_overlay, &v_sink, &a_sink])?;
+        gst::Element::link_many(&[&time_overlay, &v_sink])?;
+        for el in [&time_overlay, &v_sink, &a_sink] {
+            el.sync_state_with_parent()?;
+        }
+        
         let port = Port::new(
-            v_sink,
+            time_overlay,
             a_sink,
         );
         pipe.src_connector.take().unwrap().connect(&port)?;
-
-        // if let Some((a_identity, v_identity)) = pipe.src_connector.take() {
-        //     a_identity.link_pads(Some("src"), &a_sink, Some("sink"))?;
-        //     v_identity.link_pads(Some("src"), &v_sink, Some("sink"))?;
-        //     a_identity.sync_state_with_parent()?;
-        //     v_identity.sync_state_with_parent()?;
-        // }
 
         Ok(pipe)
     }

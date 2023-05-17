@@ -98,14 +98,15 @@ pub struct Pipe {
 }
 
 impl Pipe {
-    pub fn pipeline_to_dot_file(&self, path: &str) -> anyhow::Result<()> {
-        let dot_data = self
-            .pipeline
-            .debug_to_dot_data(gst::DebugGraphDetails::all());
+    pub fn pipeline_to_dot_file(pipeline: &gst::Pipeline, path: &str) -> anyhow::Result<()> {
+        let dot_data = pipeline.debug_to_dot_data(gst::DebugGraphDetails::all());
         let mut file = std::fs::File::create(path)?;
         std::io::Write::write_all(&mut file, dot_data.as_bytes())?;
 
         Ok(())
+    }
+    pub fn debug_to_dot_file(&self, path: &str) -> anyhow::Result<()> {
+        Self::pipeline_to_dot_file(&self.pipeline, path)
     }
 }
 

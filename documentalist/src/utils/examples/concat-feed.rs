@@ -6,13 +6,11 @@ fn main() {
     let files = vec![
         "tests/fixtures/short.mp4",
         "tests/fixtures/repeat.mp4",
-        "tests/fixtures/short.mp4",
-        "tests/fixtures/repeat.mp4",
     ];
 
     let feed = Feed::new(files);
 
-    let dest = Destination::from("examples/out/concat.webm");
+    let dest = Destination::from("examples/out/concat.mp4");
     let mut pipe = feed
         .to_sink_pipe(Pipe::default())
         .expect("Failed to create pipeline from feed.");
@@ -21,16 +19,13 @@ fn main() {
         .from_src_pipe(pipe)
         .expect("Failed to create pipeline from feed.");
 
-    pipe.pipeline_to_dot_file("tests/out/graphs/concat.dot")
-        .expect("Failed to write dot file.");
-
-    pipe.pipeline_to_dot_file("examples/out/graphs/concat.dot")
+    pipe.debug_to_dot_file("examples/out/graphs/concat.dot")
         .expect("Failed to write dot file.");
 
     Preview::run(move || {
         let state_manager = PipeStateManager::new(pipe);
         let p = state_manager.play().expect("Failed to play pipe");
-        p.pipeline_to_dot_file("examples/out/graphs/concat-after.dot")
+        p.debug_to_dot_file("examples/out/graphs/concat-after.dot")
             .expect("Failed to write dot file.");
     })
 }

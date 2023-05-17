@@ -24,13 +24,9 @@ fn main() {
     //     .expect("Failed to write dot file.");
 
     Preview::run(move || match Preview.play(pipe) {
-        Ok(pipe) => {
-            pipe.pipeline_to_dot_file("examples/out/graphs/preview-feed-after.dot")
-                .expect("Failed to write dot file.");
-        }
-        Err((pipe, err)) => {
-            pipe.pipeline_to_dot_file("examples/out/graphs/preview-feed-err.dot")
-                .expect("Failed to write dot file.");
+        Ok(_) => {
+        },
+        Err(err) => {
             panic!("{}", err)
         }
     });
