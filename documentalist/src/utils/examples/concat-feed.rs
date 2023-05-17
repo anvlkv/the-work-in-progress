@@ -12,7 +12,7 @@ fn main() {
 
     let feed = Feed::new(files);
 
-    let dest = Destination::from("examples/out/concat.mkv");
+    let dest = Destination::from("examples/out/concat.webm");
     let mut pipe = feed
         .to_sink_pipe(Pipe::default())
         .expect("Failed to create pipeline from feed.");

@@ -11,7 +11,14 @@ use gst::prelude::*;
 pub struct Preview;
 
 impl Preview {
-    pub fn play(self, pipe: Pipe) -> Result<Pipe> {
+    pub fn play(self, pipe: Pipe) -> Result<Pipe, (Pipe, anyhow::Error)> {
+        let d_pipe= pipe.pipeline.downgrade();
+        self.try_play(pipe).map_err(|e| {
+            let pipe = d_pipe.upgrade().unwrap();
+            (Pipe::from(pipe), e)
+        })
+    }
+    fn try_play(self, pipe: Pipe) -> Result<Pipe> {
         let pipe = self.from_src_pipe(pipe)?;
         pipe.pipeline.set_state(gst::State::Playing)?;
 

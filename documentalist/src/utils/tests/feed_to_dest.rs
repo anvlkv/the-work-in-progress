@@ -23,9 +23,9 @@ fn it_should_play_single_entry() {
             p.pipeline_to_dot_file("tests/out/graphs/entry-after.dot")
                 .expect("Failed to write dot file.");
         }
-        Err( err) => {
-            // p.pipeline_to_dot_file("tests/out/graphs/entry-err.dot")
-            //     .expect("Failed to write dot file.");
+        Err( (pipe, err)) => {
+            pipe.pipeline_to_dot_file("tests/out/graphs/entry-err.dot")
+                .expect("Failed to write dot file.");
             panic!("{}", err)
         }
     });
@@ -53,9 +53,9 @@ fn it_should_play_feed() {
             pipe.pipeline_to_dot_file("tests/out/graphs/preview-feed-after.dot")
                 .expect("Failed to write dot file.");
         }
-        Err(err) => {
-            // pipe.pipeline_to_dot_file("tests/out/graphs/preview-feed-err.dot")
-            //     .expect("Failed to write dot file.");
+        Err((pipe, err)) => {
+            pipe.pipeline_to_dot_file("tests/out/graphs/preview-feed-err.dot")
+                .expect("Failed to write dot file.");
             panic!("{}", err)
         }
     });
