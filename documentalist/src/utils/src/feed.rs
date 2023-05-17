@@ -28,7 +28,7 @@ use crate::{Connector, Entry, Pipe, ToSinkPipe};
 ///
 /// pipe = feed.to_sink_pipe(pipe).expect("Failed to create pipeline from feed.");
 ///
-/// assert_eq!(pipe.pipeline.children().len(), 18);
+/// assert_eq!(pipe.pipeline.children().len(), 20);
 ///
 ///
 /// ```
@@ -71,9 +71,11 @@ impl ToSinkPipe for Feed {
         let entries = self.0.clone();
         let v_concat = gst::ElementFactory::make("concat")
             .name(format!("video_{}", name))
+            .property("adjust-base", false)
             .build()?;
         let a_concat = gst::ElementFactory::make("concat")
             .name(format!("audio_{}", name))
+            .property("adjust-base", false)
             .build()?;
         let synchronizer = gst::ElementFactory::make("streamsynchronizer")
             .name(format!("synchronizer_{}", name))

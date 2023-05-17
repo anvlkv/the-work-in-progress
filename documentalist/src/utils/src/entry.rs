@@ -173,7 +173,6 @@ impl ToSinkPipe for Entry {
         // Sync the identity elements with the parent pipeline
         audio_identity.sync_state_with_parent()?;
         video_identity.sync_state_with_parent()?;
-
         let audio_identity_weak = audio_identity.downgrade();
         let video_identity_weak = video_identity.downgrade();
 
@@ -194,15 +193,15 @@ impl ToSinkPipe for Entry {
             // we moved into this callback.
             let pipeline = match pipeline_weak.upgrade() {
                 Some(pipeline) => pipeline,
-                None => return,
+                None => panic!("failed to upgrade weak ref"),
             };
             let audio_identity = match audio_identity_weak.upgrade() {
                 Some(pipeline) => pipeline,
-                None => return,
+                None => panic!("failed to upgrade weak ref"),
             };
             let video_identity = match video_identity_weak.upgrade() {
                 Some(pipeline) => pipeline,
-                None => return,
+                None => panic!("failed to upgrade weak ref"),
             };
 
             let (is_video, is_audio) = gst_element_type(decodebin, decodebin_src_pad);
@@ -261,9 +260,12 @@ impl ToSinkPipe for Entry {
                 .expect("Failed to sync identity with parent");
         });
 
+
+
+
         let connector: Connector = Connector::new(video_identity, audio_identity);
 
-        if let Some(port) = pipe.sink_port.as_ref() {
+        if let Some(port) = pipe.sink_port.take() {
             port.connect(&connector)?;
         } else {
             pipe.src_connector = Some(connector);

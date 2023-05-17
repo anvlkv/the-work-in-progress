@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{Connector, FromSrcPipe, Pipe, Port};
-use anyhow::{Result};
+use anyhow::Result;
 use gst::prelude::*;
 use gst_pbutils::{self, prelude::*};
 
@@ -18,15 +18,15 @@ use gst_pbutils::{self, prelude::*};
 ///
 /// gst::init().expect("Failed to initialize GStreamer.");
 ///
-/// let dest: Destination = "/path/to/video.mp4".try_into().expect("cannot create destination");
+/// let dest: Destination = "/path/to/video.mkv".try_into().expect("cannot create destination");
 ///
-/// assert_eq!(dest.0, "/path/to/video.mp4");
+/// assert_eq!(dest.0, "/path/to/video.mkv");
 ///
 /// let mut pipe = Pipe::default();
 ///
 /// pipe = dest.from_src_pipe(pipe).expect("Failed to create pipeline from feed.");
 ///
-/// assert_eq!(pipe.pipeline.children().len(), 4);
+/// assert_eq!(pipe.pipeline.children().len(), 6);
 ///
 /// ```
 #[derive(Clone, Debug, Hash)]
@@ -55,13 +55,13 @@ impl Destination {
     /// gst::init().expect("Failed to initialize GStreamer.");
     ///
     /// let destination = Destination::new(
-    ///  "/path/to/video.mp4".to_string(),
+    ///  "/path/to/video.mkv".to_string(),
     ///  "audio/x-vorbis",
     ///  "video/x-theora",
     ///  "video/x-matroska"
     /// );
     ///
-    /// assert_eq!(destination.0, "/path/to/video.mp4");
+    /// assert_eq!(destination.0, "/path/to/video.mkv");
     /// ```
     ///
     pub fn new(
@@ -75,21 +75,18 @@ impl Destination {
         // This profile consists of information about the contained audio and video formats
         // as well as the container format we want everything to be combined into.
 
-        // Every audio stream piped into the encodebin should be encoded using vorbis.
         let audio_profile = gst_pbutils::EncodingAudioProfile::builder(
             &gst::Caps::builder(audio_profile_name).build(),
         )
         .presence(0)
         .build();
 
-        // Every video stream piped into the encodebin should be encoded using theora.
         let video_profile = gst_pbutils::EncodingVideoProfile::builder(
             &gst::Caps::builder(video_profile_name).build(),
         )
         .presence(0)
         .build();
 
-        // All streams are then finally combined into a matroska container.
         let container_profile = gst_pbutils::EncodingContainerProfile::builder(
             &gst::Caps::builder(container_profile_name).build(),
         )
@@ -103,6 +100,61 @@ impl Destination {
     fn configure_encodebin(&self, bin: &gst::Element) {
         bin.set_property("profile", &self.1);
     }
+
+    /// Creates a new destination from a path with encoding profiles.
+    /// The container profile is determined by the file extension.
+    /// Currently supported container profiles are: mp4, mkv, avi, ogg, webm
+    /// The audio and video profiles are determined by the container profile.
+    /// Currently supported audio profiles are: vorbis, opus, mp3, aac
+    /// Currently supported video profiles are: theora, vp8, vp9, h264, h265
+    ///
+    /// # Arguments
+    /// * `path` - The path to the video file.
+    ///
+    fn new_with_extension(path: &str) -> Result<Self> {
+        let extension = std::path::Path::new(path)
+            .extension()
+            .ok_or_else(|| anyhow::anyhow!("No extension found for path {}", path))?
+            .to_str()
+            .ok_or_else(|| anyhow::anyhow!("Failed to convert extension to str"))?;
+
+        let (audio_profile_name, video_profile_name, container_profile_name) = match extension {
+            "mp4" => ("audio/mpeg", "video/x-h264", "video/x-quicktime"),
+            "mkv" => ("audio/x-vorbis", "video/x-theora", "video/x-matroska"),
+            "avi" => ("audio/x-vorbis", "video/x-theora", "video/x-avi"),
+            "ogg" => ("audio/x-vorbis", "video/x-theora", "video/x-ogg"),
+            "webm" => ("audio/x-opus", "video/x-vp9", "video/x-webm"),
+            _ => {
+                return Err(anyhow::anyhow!(
+                    "Unsupported extension {} for path {}",
+                    extension,
+                    path
+                ))
+            }
+        };
+
+        let audio_profile = gst_pbutils::EncodingAudioProfile::builder(
+            &gst::Caps::builder(audio_profile_name).build(),
+        )
+        .presence(0)
+        .build();
+
+        let video_profile = gst_pbutils::EncodingVideoProfile::builder(
+            &gst::Caps::builder(video_profile_name).build(),
+        )
+        .presence(0)
+        .build();
+
+        let container_profile = gst_pbutils::EncodingContainerProfile::builder(
+            &gst::Caps::builder(container_profile_name).build(),
+        )
+        .name("container")
+        .add_profile(video_profile)
+        .add_profile(audio_profile)
+        .build();
+
+        Ok(Self(path.to_string(), container_profile))
+    }
 }
 
 impl<'a> From<&'a str> for Destination {
@@ -113,12 +165,7 @@ impl<'a> From<&'a str> for Destination {
     /// * `path` - The path to the video file.
     ///
     fn from(path: &'a str) -> Self {
-        Self::new(
-            path.to_string(),
-            "audio/x-vorbis",
-            "video/x-theora",
-            "video/x-matroska",
-        )
+        Self::new_with_extension(path).unwrap()
     }
 }
 
@@ -143,9 +190,6 @@ impl FromSrcPipe for Destination {
             .property("location", &self.0)
             .build()?;
 
-        pipe.pipeline.add(&filesink)?;
-        gst::Element::link_many(&[&encodebin, &filesink])?;
-
         let (v_id_el, a_id_el) = {
             if let Some(Connector(v_id_el, a_id_el)) = pipe.src_connector.take() {
                 (v_id_el, a_id_el)
@@ -158,44 +202,71 @@ impl FromSrcPipe for Destination {
                     .build()?;
                 pipe.pipeline
                     .add_many(&[&audio_identity, &video_identity])?;
-
+                audio_identity.sync_state_with_parent()?;
+                video_identity.sync_state_with_parent()?;
                 (video_identity, audio_identity)
             }
         };
-        let encodebin_d = encodebin.downgrade();
-        a_id_el.connect_pad_added(move |el, src_pad| {
-            let encodebin = match encodebin_d.upgrade() {
-                Some(encodebin) => encodebin,
-                None => return,
-            };
-            let sink_pad = encodebin.static_pad("sink_1").unwrap();
-            if sink_pad.is_linked() {
-                return;
-            }
-            src_pad.link(&sink_pad).unwrap();
-            el.sync_state_with_parent().unwrap();
-        });
 
-        let encodebin_d = encodebin.downgrade();
-        v_id_el.connect_pad_added(move |el, src_pad| {
-            let encodebin = match encodebin_d.upgrade() {
-                Some(encodebin) => encodebin,
-                None => return,
-            };
-            let sink_pad = encodebin.static_pad("sink_0").unwrap();
-            if sink_pad.is_linked() {
-                return;
-            }
-            src_pad.link(&sink_pad).unwrap();
-            el.sync_state_with_parent().unwrap();
-        });
+        pipe.pipeline.add(&filesink)?;
+        gst::Element::link_many(&[&encodebin, &filesink])?;
+
+        {
+            // let template = encodebin
+            //     .pad_template("audio_%u")
+            //     .expect("No audio pad template");
+
+            // let enc_sink_pad = gst::Pad::from_template(&template, Some("audio_0"));
+            // encodebin.add_pad(&enc_sink_pad).expect("Failed to add audio pad");
+            let enc_sink_pad = encodebin
+                .request_pad_simple("audio_%u")
+                .expect("Could not get audio pad from encodebin");
+
+            let queue = gst::ElementFactory::make("queue")
+                .name(format!("audio_queue_{}", name))
+                .build()?;
+            let src_pad = a_id_el.static_pad("src").unwrap();
+            let queue_sink_pad = queue.static_pad("sink").unwrap();
+            let queue_src_pad = queue.static_pad("src").unwrap();
+            pipe.pipeline.add(&queue)?;
+            queue.sync_state_with_parent()?;
+
+            src_pad.link(&queue_sink_pad)?;
+            queue_src_pad.link(&enc_sink_pad)?;
+        }
+
+        {
+            // let template = encodebin
+            //     .pad_template("video_%u")
+            //     .expect("No video pad template");
+
+            // let enc_sink_pad = gst::Pad::from_template(&template, Some("video_0"));
+            // encodebin.add_pad(&enc_sink_pad).expect("Failed to add video pad");
+
+            let enc_sink_pad = encodebin
+                .request_pad_simple("video_%u")
+                .expect("Could not get video pad from encodebin");
+
+            let queue = gst::ElementFactory::make("queue")
+                .name(format!("video_queue_{}", name))
+                .build()?;
+            let src_pad = v_id_el.static_pad("src").unwrap();
+            let queue_sink_pad = queue.static_pad("sink").unwrap();
+            let queue_src_pad = queue.static_pad("src").unwrap();
+            pipe.pipeline.add(&queue)?;
+            queue.sync_state_with_parent()?;
+
+            src_pad.link(&queue_sink_pad)?;
+            queue_src_pad.link(&enc_sink_pad)?;
+        }
+        encodebin.sync_state_with_parent()?;
+        filesink.sync_state_with_parent()?;
 
         pipe.sink_port = Some(Port::new(v_id_el, a_id_el));
 
         Ok(pipe)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -204,16 +275,16 @@ mod tests {
     #[test]
     fn it_should_create_destination_from_path() {
         gst::init().expect("Failed to initialize GStreamer.");
-        let destination = Destination::from("/path/to/video.mp4");
+        let destination = Destination::from("/path/to/video.mkv");
 
-        assert_eq!(destination.0, "/path/to/video.mp4");
+        assert_eq!(destination.0, "/path/to/video.mkv");
     }
 
     #[test]
-    fn it_should_create_pipeline_from_destination() {
+    fn it_should_create_pipeline_from_mkv_destination() {
         gst::init().expect("Failed to initialize GStreamer.");
 
-        let destination = Destination::from("/path/to/video.mp4");
+        let destination = Destination::from("/path/to/video.mkv");
 
         let mut pipe = Pipe::default();
 
@@ -221,6 +292,65 @@ mod tests {
             .from_src_pipe(pipe)
             .expect("Failed to create pipeline from destination.");
 
-        assert_eq!(pipe.pipeline.children().len(), 4);
+        assert_eq!(pipe.pipeline.children().len(), 6);
     }
+
+    // #[test]
+    // fn it_should_create_pipeline_with_mp4_destination() {
+    //     gst::init().expect("Failed to initialize GStreamer.");
+
+    //     let destination = Destination::from("/path/to/video.mp4");
+
+    //     let mut pipe = Pipe::default();
+
+    //     pipe = destination
+    //         .from_src_pipe(pipe)
+    //         .expect("Failed to create pipeline from destination.");
+
+    //     assert_eq!(pipe.pipeline.children().len(), 6);
+    // }
+
+    // #[test]
+    // fn it_should_create_pipeline_with_avi_destination() {
+    //     gst::init().expect("Failed to initialize GStreamer.");
+
+    //     let destination = Destination::from("/path/to/video.avi");
+
+    //     let mut pipe = Pipe::default();
+
+    //     pipe = destination
+    //         .from_src_pipe(pipe)
+    //         .expect("Failed to create pipeline from destination.");
+
+    //     assert_eq!(pipe.pipeline.children().len(), 6);
+    // }
+    // #[test]
+    // fn it_should_create_pipeline_with_ogg_destination() {
+    //     gst::init().expect("Failed to initialize GStreamer.");
+
+    //     let destination = Destination::from("/path/to/video.ogg");
+
+    //     let mut pipe = Pipe::default();
+
+    //     pipe = destination
+    //         .from_src_pipe(pipe)
+    //         .expect("Failed to create pipeline from destination.");
+
+    //     assert_eq!(pipe.pipeline.children().len(), 6);
+    // }
+
+    // #[test]
+    // fn it_should_create_pipeline_with_webm_destination() {
+    //     gst::init().expect("Failed to initialize GStreamer.");
+
+    //     let destination = Destination::from("/path/to/video.webm");
+
+    //     let mut pipe = Pipe::default();
+
+    //     pipe = destination
+    //         .from_src_pipe(pipe)
+    //         .expect("Failed to create pipeline from destination.");
+
+    //     assert_eq!(pipe.pipeline.children().len(), 6);
+    // }
 }

@@ -20,9 +20,9 @@ fn main() {
             pipe.pipeline_to_dot_file("examples/out/graphs/preview-entry-after.dot")
                 .expect("Failed to write dot file.");
         }
-        Err((pipe, err)) => {
-            pipe.pipeline_to_dot_file("examples/out/graphs/preview-entry-err.dot")
-                .expect("Failed to write dot file.");
+        Err(err) => {
+            // pipe.pipeline_to_dot_file("examples/out/graphs/preview-entry-err.dot")
+            //     .expect("Failed to write dot file.");
             panic!("{}", err)
         }
     });

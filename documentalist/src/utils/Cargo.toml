@@ -28,6 +28,7 @@ gst-allocators = { package = "gstreamer-allocators", version="^0.20", optional =
 gtk = { git = "https://github.com/gtk-rs/gtk3-rs", optional = true }
 gdk = { git = "https://github.com/gtk-rs/gtk3-rs", optional = true }
 gio = { git = "https://github.com/gtk-rs/gtk-rs-core", optional = true }
+
 anyhow = "1.0"
 derive_more = "0.99.5"
 futures = "0.3"
