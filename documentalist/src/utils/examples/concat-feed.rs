@@ -1,31 +1,26 @@
-use utils::{Destination, Feed, FromSrcPipe, Pipe, PipeStateManager, Preview, ToSinkPipe};
+use utils::{Destination, Feed, Pipe, PipeVisitor, PipeStateManager};
+
+/// concatenate the contents of two feeds
 
 fn main() {
-    gst::init().expect("Failed to initialize GStreamer.");
+    ges::init().expect("Failed to initialize GStreamer.");
 
-    let files = vec![
-        "tests/fixtures/short.mp4",
+    let feed_1 = Feed::new(vec![
+        "tests/fixtures/short.mp4#t=10000,3000000",
         "tests/fixtures/repeat.mp4",
-    ];
+    ]);
+    let feed_2 = Feed::new(vec![
+        "tests/fixtures/repeat.mp4#t=10000,3000000",
+        "tests/fixtures/short_silent.mp4",
+    ]);
+    let mut pipe = Pipe::default();
 
-    let feed = Feed::new(files);
+    feed_1.visit(&mut pipe).expect("Failed to visit pipe.");
+
+    feed_2.visit(&mut pipe).expect("Failed to visit pipe.");
 
     let dest = Destination::from("examples/out/concat.mp4");
-    let mut pipe = feed
-        .to_sink_pipe(Pipe::default())
-        .expect("Failed to create pipeline from feed.");
+    dest.visit(&mut pipe).expect("Failed to visit pipe.");
 
-    pipe = dest
-        .from_src_pipe(pipe)
-        .expect("Failed to create pipeline from feed.");
-
-    pipe.debug_to_dot_file("examples/out/graphs/concat.dot")
-        .expect("Failed to write dot file.");
-
-    Preview::run(move || {
-        let state_manager = PipeStateManager::new(pipe);
-        let p = state_manager.play().expect("Failed to play pipe");
-        p.debug_to_dot_file("examples/out/graphs/concat-after.dot")
-            .expect("Failed to write dot file.");
-    })
+    PipeStateManager::new(pipe).play().expect("Failed to play pipe.");
 }

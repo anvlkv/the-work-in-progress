@@ -1,9 +1,9 @@
 use crate::{
     error::{ErrorMessage, ErrorValue},
-    FromSrcPipe, Pipe, Port,
+    PipeVisitor, Pipe
 };
 use anyhow::Result;
-use gst::prelude::*;
+use ges::prelude::*;
 
 /// Utility for previewing clips.
 /// adds autoaudiosink and autovideosink to end of the pipeline.
@@ -12,9 +12,12 @@ pub struct Preview;
 
 impl Preview {
 
-    pub fn play(self, pipe: Pipe) -> Result<()> {
-        let pipe = self.from_src_pipe(pipe)?;
+    pub fn play(self, mut pipe: Pipe) -> Result<()> {
+        self.visit(&mut pipe)?;
+
         pipe.pipeline.set_state(gst::State::Playing)?;
+
+        
 
         let bus = pipe.pipeline
             .bus()
@@ -149,30 +152,18 @@ impl Preview {
     }
 }
 
-impl FromSrcPipe for Preview {
-    fn from_src_pipe(self, mut pipe: Pipe) -> Result<Pipe> {
+impl PipeVisitor for Preview {
+    fn visit_layer_name(&self, _: &str, pipe: &mut Pipe) -> Result<()> {
         let v_sink = gst::ElementFactory::make("autovideosink")
             .name("v_sink")
             .build()?;
         let a_sink = gst::ElementFactory::make("autoaudiosink")
             .name("a_sink")
             .build()?;
-        let time_overlay = gst::ElementFactory::make("timeoverlay")
-            .name("time_overlay")
-            .build()?;
-
-        pipe.pipeline.add_many(&[&time_overlay, &v_sink, &a_sink])?;
-        gst::Element::link_many(&[&time_overlay, &v_sink])?;
-        for el in [&time_overlay, &v_sink, &a_sink] {
-            el.sync_state_with_parent()?;
-        }
-        
-        let port = Port::new(
-            time_overlay,
-            a_sink,
-        );
-        pipe.src_connector.take().unwrap().connect(&port)?;
-
-        Ok(pipe)
+        pipe.pipeline.set_video_sink(Some(&v_sink));
+        pipe.pipeline.set_audio_sink(Some(&a_sink));
+        Ok(())
     }
 }
+
+

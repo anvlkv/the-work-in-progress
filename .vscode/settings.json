@@ -17,6 +17,8 @@
 		"encodebin",
 		"filesink",
 		"filesrc",
+		"inpoint",
+		"intime",
 		"matroska",
 		"mpegts",
 		"Offthread",

@@ -1,5 +1,5 @@
 use crate::Pipe;
-use gst::prelude::*;
+use ges::prelude::*;
 
 /// Manages the state of a pipeline.
 ///

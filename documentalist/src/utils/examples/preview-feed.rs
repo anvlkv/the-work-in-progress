@@ -1,33 +1,20 @@
-use utils::{Feed, Pipe, Preview, ToSinkPipe};
+use utils::{Feed, Pipe, Preview, PipeVisitor};
+
+/// preview Feed from path
 
 fn main() {
-    gst::init().expect("Failed to initialize GStreamer.");
-
-    let files = vec![
-        "tests/fixtures/short.mp4",
-        "tests/fixtures/repeat.mp4",
-        "tests/fixtures/repeat.mp4",
-        // TODO!: it fails on silent videos
-        // "tests/fixtures/short_silent.mp4",
-    ];
-
-    let feed = Feed::new(files);
-
+  ges::init().expect("Failed to initialize GStreamer.");
+  
+  
+  Preview::run(move || {
+    let feed = Feed::new(vec!["tests/fixtures/short.mp4#t=10000,3000000", "tests/fixtures/repeat.mp4"]);
+  
     let mut pipe = Pipe::default();
+  
+    feed
+      .visit(&mut pipe)
+      .expect("Failed to visit pipe.");
 
-    pipe = feed
-        .to_sink_pipe(pipe)
-        .expect("Failed to create pipeline from feed.");
-
-
-    // pipe.pipeline_to_dot_file("examples/out/graphs/preview-feed-before.dot")
-    //     .expect("Failed to write dot file.");
-
-    Preview::run(move || match Preview.play(pipe) {
-        Ok(_) => {
-        },
-        Err(err) => {
-            panic!("{}", err)
-        }
-    });
+    Preview.play(pipe).unwrap();
+  });
 }

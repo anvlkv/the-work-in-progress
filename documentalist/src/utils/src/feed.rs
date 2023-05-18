@@ -1,36 +1,23 @@
 use anyhow::Result;
-use gst::prelude::*;
-use std::{
-    collections::hash_map::DefaultHasher,
-    hash::{Hash, Hasher},
-};
+use crate::{Pipe, PipeVisitor, Entry};
+use ges::prelude::*;
 
-use crate::{Connector, Entry, Pipe, ToSinkPipe};
-
-/// Represents a feed of video clips.
+/// Represents a feed of entries.
 ///
 /// # Examples
 ///
 /// ```
-/// use utils::{Feed, ToSinkPipe, Pipe};
-/// use std::convert::TryInto;
-/// use gst::prelude::*;
-///
-/// gst::init().expect("Failed to initialize GStreamer.");
-///
-/// let mut feed = Feed::new(vec!["/path/to/video1.mp4", "/path/to/video2.mp4"]);
-///
-/// feed.add("/path/to/video3.mp4");
-///
-/// assert_eq!(feed.0.len(), 3);
-///
+/// use utils::{Feed, Pipe, PipeVisitor};
+/// use ges::prelude::*;
+/// 
+/// ges::init().expect("Failed to initialize GES.");
+/// 
+/// let feed = Feed::new(vec!["tests/fixtures/short.mp4", "tests/fixtures/short.mp4#t=10,20"]);
+/// 
 /// let mut pipe = Pipe::default();
-///
-/// pipe = feed.to_sink_pipe(pipe).expect("Failed to create pipeline from feed.");
-///
-/// assert_eq!(pipe.pipeline.children().len(), 21);
-///
-///
+/// 
+/// feed.visit(&mut pipe).expect("Failed to visit pipe.");
+/// 
 /// ```
 #[derive(Clone, Debug, Hash)]
 pub struct Feed(
@@ -48,84 +35,22 @@ impl Feed {
     pub fn new(paths: Vec<&str>) -> Self {
         Self(paths.into_iter().map(|path| path.into()).collect())
     }
+}
 
-    /// Adds a path to the feed.
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - The path to the video file.
-    ///
-    pub fn add(&mut self, path: &str) -> &mut Entry {
-        self.0.push(path.into());
-        self.0.last_mut().unwrap()
+impl PipeVisitor for Feed {
+    fn visit_layer_name(&self, name: &str, pipe: &mut Pipe) -> Result<()> {
+        let mut duration = pipe.layers.get(name).unwrap().duration().clone();
+        for entry in &self.0 {
+            entry.clip.set_start(duration);
+            let entry_duration = entry.clip.duration();
+            duration += entry_duration;
+            entry.visit_layer_name(name, pipe)?;
+        }
+
+        Ok(())
     }
 }
 
-impl ToSinkPipe for Feed {
-    fn to_sink_pipe(self, mut pipe: Pipe) -> Result<Pipe> {
-        let name = {
-            let mut hasher = DefaultHasher::new();
-            self.hash(&mut hasher);
-            format!("feed_{:x}", hasher.finish())
-        };
-        let entries = self.0.clone();
-        let v_concat = gst::ElementFactory::make("concat")
-            .name(format!("video_{}", name))
-            .property("adjust-base", false)
-            .build()?;
-        let a_concat = gst::ElementFactory::make("concat")
-            .name(format!("audio_{}", name))
-            .property("adjust-base", false)
-            .build()?;
-        let multiqueue = gst::ElementFactory::make("multiqueue")
-            .name(format!("multiqueue_{}", name))
-            .property("sync-by-running-time", true)
-            .build()?;
-        let synchronizer = gst::ElementFactory::make("streamsynchronizer")
-            .name(format!("synchronizer_{}", name))
-            .build()?;
-        let video_identity = gst::ElementFactory::make("identity")
-            .name(format!("video_identity_{}", name))
-            .build()?;
-        let audio_identity = gst::ElementFactory::make("identity")
-            .name(format!("audio_identity_{}", name))
-            .build()?;
-
-        pipe.pipeline.add_many(&[
-            &v_concat,
-            &a_concat,
-            &multiqueue,
-            &synchronizer,
-            &video_identity,
-            &audio_identity,
-        ])?;
-
-        v_concat.link_pads(Some("src"), &synchronizer, Some("sink_0"))?;
-        a_concat.link_pads(Some("src"), &synchronizer, Some("sink_1"))?;
-        synchronizer.link_pads(Some("src_0"), &multiqueue, Some("sink_0"))?;
-        synchronizer.link_pads(Some("src_1"), &multiqueue, Some("sink_1"))?;
-        multiqueue.link_pads(Some("src_0"), &video_identity, Some("sink"))?;
-        multiqueue.link_pads(Some("src_1"), &audio_identity, Some("sink"))?;
-        
-        for el in [&v_concat, &a_concat, &synchronizer, &video_identity, &audio_identity, &multiqueue] {
-            el.sync_state_with_parent()?;
-        }
-
-        for entry in entries {
-            pipe = entry.to_sink_pipe(pipe)?;
-            if let Some(connector) = pipe.src_connector.as_ref() {
-                connector.connect_elements(&v_concat, &a_concat)?;
-            }
-        }
-
-        pipe.src_connector = Some(Connector::new(
-            video_identity,
-            audio_identity,
-        ));
-
-        Ok(pipe)
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -133,18 +58,33 @@ mod tests {
 
     #[test]
     fn it_should_create_feed() {
-        let feed = Feed::new(vec!["/path/to/video1.mp4", "/path/to/video2.mp4"]);
+        ges::init().expect("Failed to initialize GStreamer.");
+        
+        let feed = Feed::new(vec!["tests/fixtures/short.mp4", "tests/fixtures/short.mp4#t=10,20"]);
         assert_eq!(feed.0.len(), 2);
     }
 
     #[test]
-    fn it_should_link_from_pipe() {
-        gst::init().expect("Failed to initialize GStreamer.");
+    fn it_should_visit_pipe() {
+        ges::init().expect("Failed to initialize GStreamer.");
 
-        let feed = Feed::new(vec!["/path/to/video1.mp4", "/path/to/video2.mp4"]);
-        let pipe = feed
-            .to_sink_pipe(Pipe::default())
-            .expect("Failed to link from pipe.");
-        assert_eq!(pipe.pipeline.children().len(), 16);
+        let mut pipe = Pipe::default();
+        let feed = Feed::new(vec!["tests/fixtures/short.mp4", "tests/fixtures/short.mp4#t=10,20"]);
+        feed.visit(&mut pipe).expect("Failed to visit pipe.");
+
+        let clips = pipe.layers.get("default").unwrap().clips();
+
+        assert_eq!(clips.len(), 2);
+
+        let clip_0 = clips.get(0).unwrap();
+
+        assert_eq!(clip_0.start(), gst::ClockTime::from_useconds(0));
+
+        let clip_1 = clips.get(1).unwrap();
+
+        assert_eq!(clip_1.inpoint(), gst::ClockTime::from_useconds(10));
+        assert_eq!(clip_1.start(), clip_0.duration());
+        assert_eq!(clip_1.duration(), gst::ClockTime::from_useconds(20));
+
     }
 }

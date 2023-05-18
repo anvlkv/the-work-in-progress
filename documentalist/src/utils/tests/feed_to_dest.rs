@@ -1,82 +1,78 @@
-use gst::prelude::*;
-use utils::{Destination, Entry, Feed, FromSrcPipe, Pipe, PipeStateManager, Preview, ToSinkPipe};
+use ges::prelude::*;
+use utils::{Destination, Entry, Feed, Pipe, PipeStateManager, PipeVisitor, Preview};
 
 #[test]
 fn it_should_play_single_entry() {
-    gst::init().expect("Failed to initialize GStreamer.");
+    ges::init().expect("Failed to initialize GES.");
+    Preview::run(move || {
+        let feed = Entry::from("tests/fixtures/short.mp4");
 
-    let feed = Entry::from("tests/fixtures/short.mp4");
+        let mut pipe = Pipe::default();
 
-    let mut pipe = Pipe::default();
+        feed.visit(&mut pipe)
+            .expect("Failed to create pipeline from feed.");
 
-    pipe = feed
-        .to_sink_pipe(pipe)
-        .expect("Failed to create pipeline from feed.");
+        pipe.pipeline_to_dot_file("tests/out/graphs/entry.dot")
+            .expect("Failed to write dot file.");
 
-    assert_eq!(pipe.pipeline.children().len(), 5);
-
-    pipe.debug_to_dot_file("tests/out/graphs/entry.dot")
-        .expect("Failed to write dot file.");
-
-    Preview::run(move || match Preview.play(pipe) {
-        Ok(_) => {}
-        Err(err) => {
-            panic!("{}", err)
-        }
+        match Preview.play(pipe) {
+            Ok(_) => {}
+            Err(err) => {
+                panic!("{}", err)
+            }
+        };
     });
 }
 
 #[test]
 fn it_should_play_feed() {
-    gst::init().expect("Failed to initialize GStreamer.");
+    ges::init().expect("Failed to initialize GES.");
+    Preview::run(move || {
+        let files = vec!["tests/fixtures/short.mp4", "tests/fixtures/short.mp4"];
 
-    let files = vec!["tests/fixtures/short.mp4", "tests/fixtures/short.mp4"];
+        let feed = Feed::new(files);
 
-    let feed = Feed::new(files);
+        let mut pipe = Pipe::default();
 
-    let mut pipe = Pipe::default();
+        feed.visit(&mut pipe)
+            .expect("Failed to create pipeline from feed.");
 
-    pipe = feed
-        .to_sink_pipe(pipe)
-        .expect("Failed to create pipeline from feed.");
+        pipe.pipeline_to_dot_file("tests/out/graphs/feed.dot")
+            .expect("Failed to write dot file.");
 
-    pipe.debug_to_dot_file("tests/out/graphs/feed.dot")
-        .expect("Failed to write dot file.");
-
-    Preview::run(move || match Preview.play(pipe) {
-        Ok(_) => {}
-        Err(err) => {
-            panic!("{}", err)
-        }
+        match Preview.play(pipe) {
+            Ok(_) => {}
+            Err(err) => {
+                panic!("{}", err)
+            }
+        };
     });
 }
 
 #[test]
 fn it_should_concat_clips() {
-    gst::init().expect("Failed to initialize GStreamer.");
-
-    let files = vec![
-        "tests/fixtures/short.mp4",
-        "tests/fixtures/repeat.mp4",
-        "tests/fixtures/short.mp4",
-        "tests/fixtures/repeat.mp4",
-    ];
-
-    let feed = Feed::new(files);
-
-    let dest = Destination::from("tests/out/concat.mkv");
-    let mut pipe = feed
-        .to_sink_pipe(Pipe::default())
-        .expect("Failed to create pipeline from feed.");
-
-    pipe = dest
-        .from_src_pipe(pipe)
-        .expect("Failed to create pipeline from feed.");
-
-    pipe.debug_to_dot_file("tests/out/graphs/concat.dot")
-        .expect("Failed to write dot file.");
-
+    ges::init().expect("Failed to initialize GES.");
     Preview::run(move || {
+        let files = vec![
+            "tests/fixtures/short.mp4",
+            "tests/fixtures/repeat.mp4",
+            "tests/fixtures/short.mp4",
+            "tests/fixtures/repeat.mp4",
+        ];
+
+        let feed = Feed::new(files);
+
+        let dest = Destination::from("tests/out/concat.mkv");
+        let mut pipe = Pipe::default();
+        feed.visit(&mut pipe)
+            .expect("Failed to create pipeline from feed.");
+
+        dest.visit(&mut pipe)
+            .expect("Failed to create pipeline from feed.");
+
+        pipe.pipeline_to_dot_file("tests/out/graphs/concat.dot")
+            .expect("Failed to write dot file.");
+
         let state_manager = PipeStateManager::new(pipe);
         state_manager.play().expect("Failed to play pipe");
     })
