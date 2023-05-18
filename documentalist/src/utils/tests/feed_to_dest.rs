@@ -1,4 +1,3 @@
-use ges::prelude::*;
 use utils::{Destination, Entry, Feed, Pipe, PipeStateManager, PipeVisitor, Preview};
 
 #[test]
@@ -73,7 +72,7 @@ fn it_should_concat_clips() {
         pipe.pipeline_to_dot_file("tests/out/graphs/concat.dot")
             .expect("Failed to write dot file.");
 
-        let state_manager = PipeStateManager::new(pipe);
+        let state_manager = PipeStateManager::new(&pipe);
         state_manager.play().expect("Failed to play pipe");
     })
 }

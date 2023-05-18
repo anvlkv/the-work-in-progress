@@ -1,16 +1,17 @@
 use crate::Pipe;
 use ges::prelude::*;
+use anyhow::Result;
 
 /// Manages the state of a pipeline.
 ///
-pub struct PipeStateManager(Pipe);
+pub struct PipeStateManager<'a>(&'a Pipe);
 
-impl PipeStateManager {
-    pub fn new(pipeline: Pipe) -> Self {
+impl<'a> PipeStateManager<'a> {
+    pub fn new(pipeline: &'a Pipe) -> Self {
         Self(pipeline)
     }
 
-    pub fn play(self) -> Result<Pipe, anyhow::Error> {
+    pub fn play(self) -> Result<()> {
         let pipe = &self.0;
         pipe.pipeline.set_state(gst::State::Playing)?;
         use gst::MessageView;
@@ -38,7 +39,7 @@ impl PipeStateManager {
             }
         }
         pipe.pipeline.set_state(gst::State::Null)?;
-        Ok(self.0)
+        Ok(())
     }
 }
 
@@ -51,7 +52,7 @@ mod tests {
         gst::init().expect("Failed to initialize GStreamer.");
 
         let pipe = Pipe::default();
-        let _ = PipeStateManager::new(pipe);
+        let _ = PipeStateManager::new(&pipe);
     }
 
     // #[test]
