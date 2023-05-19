@@ -1,5 +1,4 @@
-
-use crate::{ Pipe, PipeVisitor, as_absolute_path_uri};
+use crate::{as_absolute_path_uri, Pipe, PipeVisitor};
 use anyhow::Result;
 use ges::prelude::*;
 
@@ -48,14 +47,45 @@ impl Destination {
             .to_str()
             .ok_or_else(|| anyhow::anyhow!("Failed to convert extension to str"))?;
 
-        let (audio_profile_name, video_profile_name, container_profile_name) = match extension {
-            "mp4" => ("audio/mpeg", "video/x-h264", "video/quicktime"),
-            "mkv" => ("audio/x-vorbis", "video/x-theora", "video/x-matroska"),
-            "ogg" => ("audio/x-vorbis", "video/x-theora", "application/ogg"),
-            "webm" => ("audio/x-opus", "video/x-vp9", "video/webm"),
+        let (audio_profile_caps, video_profile_caps, container_profile_caps) = match extension {
+            "mp4" => (
+                // FIXME: some suggest to set mpegversion=1 and layer=3 but its failing to set render settings
+                gst::Caps::builder("audio/mpeg")
+                // .field("mpegversion", "1")
+                // .field("layer", "3")
+                .build(),
+                gst::Caps::builder("video/x-h264").build(),
+                // FIXME: some suggest to set variant=iso but its failing to set render settings
+                gst::Caps::builder("video/quicktime")
+                // .field("variant", "iso")
+                .build(),
+            ),
+            "mkv" => (
+                gst::Caps::builder("audio/x-vorbis").build(),
+                gst::Caps::builder("video/x-theora").build(),
+                gst::Caps::builder("video/x-matroska").build(),
+            ),
+            "ogg" => (
+                gst::Caps::builder("audio/x-vorbis").build(),
+                gst::Caps::builder("video/x-theora").build(),
+                gst::Caps::builder("application/ogg").build(),
+            ),
+            "webm" => (
+                gst::Caps::builder("audio/x-opus").build(),
+                gst::Caps::builder("video/x-vp9").build(),
+                gst::Caps::builder("video/webm").build(),
+            ),
             // FIXME: these are failing
-            "avi" => ("audio/x-vorbis", "video/x-theora", "video/x-msvideo"),
-            "ts" => ("audio/x-ac3", "video/x-h264", "video/mpegts"),
+            "avi" => (
+                gst::Caps::builder("audio/x-vorbis").build(),
+                gst::Caps::builder("video/x-theora").build(),
+                gst::Caps::builder("video/x-msvideo").build(),
+            ),
+            "ts" => (
+                gst::Caps::builder("audio/x-ac3").build(),
+                gst::Caps::builder("video/x-h264").build(),
+                gst::Caps::builder("video/mpegts").build(),
+            ),
             _ => {
                 return Err(anyhow::anyhow!(
                     "Unsupported extension {} for path {}",
@@ -66,25 +96,25 @@ impl Destination {
         };
 
         let audio_profile = gst_pbutils::EncodingAudioProfile::builder(
-            &gst::Caps::builder(audio_profile_name).build(),
+            &audio_profile_caps,
         )
         .build();
-
-        
 
         let video_profile = gst_pbutils::EncodingVideoProfile::builder(
-            &gst::Caps::builder(video_profile_name).build(),
+            &video_profile_caps,
         )
         .build();
 
+        // video_profile.se
 
         let container_profile = gst_pbutils::EncodingContainerProfile::builder(
-            &gst::Caps::builder(container_profile_name).build(),
+            &container_profile_caps,
         )
         .name("container")
         .add_profile(video_profile)
         .add_profile(audio_profile)
         .build();
+
 
         Ok(Self(as_absolute_path_uri(path), container_profile))
     }
@@ -106,8 +136,7 @@ impl PipeVisitor for Destination {
     fn visit_layer_name(&self, _: &str, pipe: &mut Pipe) -> Result<()> {
         println!("output_uri: {}", self.0);
         pipe.pipeline.set_render_settings(&self.0, &self.1)?;
-        pipe.pipeline
-            .set_mode(ges::PipelineFlags::RENDER)?;
+        pipe.pipeline.set_mode(ges::PipelineFlags::RENDER)?;
         Ok(())
     }
 }
@@ -120,7 +149,6 @@ mod tests {
     fn it_should_create_destination_from_path() {
         ges::init().expect("Failed to initialize GStreamer.");
         let _ = Destination::from("tests/out/destination.mkv");
-
     }
 
     #[test]
@@ -131,12 +159,9 @@ mod tests {
 
         let mut pipe = Pipe::default();
 
-        
-
         destination
             .visit(&mut pipe)
             .expect("Failed to create pipeline from destination.");
-
     }
 
     #[test]
@@ -150,7 +175,6 @@ mod tests {
         destination
             .visit(&mut pipe)
             .expect("Failed to create pipeline from destination.");
-
     }
 
     #[test]
@@ -165,7 +189,6 @@ mod tests {
         destination
             .visit(&mut pipe)
             .expect("Failed to create pipeline from destination.");
-
     }
     #[test]
     fn it_should_visit_pipeline_with_ogg_destination() {
@@ -178,7 +201,6 @@ mod tests {
         destination
             .visit(&mut pipe)
             .expect("Failed to create pipeline from destination.");
-
     }
 
     #[test]
@@ -192,7 +214,6 @@ mod tests {
         destination
             .visit(&mut pipe)
             .expect("Failed to create pipeline from destination.");
-
     }
 
     #[test]
@@ -207,6 +228,5 @@ mod tests {
         destination
             .visit(&mut pipe)
             .expect("Failed to create pipeline from destination.");
-
     }
 }

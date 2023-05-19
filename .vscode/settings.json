@@ -32,7 +32,8 @@
 		"theora",
 		"videoconvert",
 		"vorbis",
-		"webm"
+		"webm",
+		"µseconds"
 	],
 	"rust-analyzer.showUnlinkedFileNotification": false
 }

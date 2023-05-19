@@ -46,7 +46,6 @@ impl PipeVisitor for Feed {
             duration += entry_duration;
             entry.visit_layer_name(name, pipe)?;
         }
-
         Ok(())
     }
 }

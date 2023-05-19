@@ -1,0 +1,59 @@
+# example timeline file
+#
+# adds five file entries in two feeds to the timeline
+# 
+# adds some timestamps to sources
+# adds volume and time compression markers to timestamps
+
+
+# list of sources
+
+# multiple files source
+- files:
+    tests/fixtures/short.mp4:
+      # 1 seconds 25 milliseconds timestamp
+      01.250:
+        # marker mute volume
+        vol: 0
+      # 2 seconds 300 µseconds timestamp 
+      02.000300:
+        # marker volume 0.5 (half volume)
+        vol: 0.5
+    # trim the first 300 µseconds of the video
+    # and then set duration to  20000000 µseconds
+    tests/fixtures/short_silent.mp4#t=300,20000000:
+    tests/fixtures/repeat.mp4:
+      # 0 seconds 25 milliseconds timestamp
+      00.250:
+        # marker time compression -5 (five times slower)
+        tc: -5
+      # 3 seconds timestamp
+      03:  
+        # marker time compression 0 (normal speed)
+        tc: 0
+      # 4 seconds 500 milliseconds timestamp
+      04.500:
+        # marker time compression 77.2 (very fast)
+        tc: 77.2
+    tests/fixtures/long.mp4:
+      # 1 minute, 1 second, 250 milliseconds timestamp
+      01:01.250:
+        # trim until this timestamp
+        trim: start
+      # 2 minute, 5 seconds, 500 milliseconds timestamp
+      02:05.500:
+        # trim from this timestamp
+        trim: end
+
+# single file source
+- files:
+    tests/fixtures/short.mp4:
+      0.300:
+        # trim the first 300 milliseconds of the video
+        trim: start
+        tc: 3
+      2.5:
+        tc: -3
+      2.800:
+        # trim the last 200 milliseconds of the 3 seconds video
+        trim: end

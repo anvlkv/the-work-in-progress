@@ -53,6 +53,13 @@ impl Pipe {
 
         Ok(())
     }
+
+    pub fn add_layer(&mut self, name: &str) -> Result<&mut ges::Layer> {
+        let layer = self.pipeline.timeline().unwrap().append_layer();
+        self.layers.insert(name.to_string(), layer);
+
+        Ok(self.layers.get_mut(name).unwrap())
+    }
 }
 
 pub trait PipeVisitor {

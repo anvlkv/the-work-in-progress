@@ -5,6 +5,7 @@ mod feed;
 mod preview;
 mod destination;
 mod pipe_state_manager;
+mod timeline;
 
 pub use entry::{Entry};
 pub use pipe::{Pipe, PipeVisitor};

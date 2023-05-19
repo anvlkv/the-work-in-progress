@@ -48,6 +48,7 @@ impl Entry {
         if let Some(end) = end {
             clip.set_duration(end);
         }
+        clip.set_meta("entry", Some(&glib::Value::from(path)));
         Self {
             path: path.to_string(),
             trim: (trim_start, trim_end),

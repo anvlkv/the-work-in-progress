@@ -12,6 +12,7 @@ fn main() {
     ]);
     let feed_2 = Feed::new(vec![
         "tests/fixtures/repeat.mp4#t=10000,3000000",
+        "tests/fixtures/long.mp4#t=10000,300000000",
         "tests/fixtures/short_silent.mp4",
     ]);
     let mut pipe = Pipe::default();
