@@ -35,7 +35,7 @@ impl<'a> PipeStateManager<'a> {
                         err.error()
                     );
                 }
-                _ => println!("Message {:?}", msg),
+                _ => {}
             }
         }
         pipe.pipeline.set_state(gst::State::Null)?;
@@ -49,18 +49,9 @@ mod tests {
 
     #[test]
     fn it_should_create_pipe_state_manager() {
-        gst::init().expect("Failed to initialize GStreamer.");
+        ges::init().expect("Failed to initialize GStreamer.");
 
         let pipe = Pipe::default();
         let _ = PipeStateManager::new(&pipe);
     }
-
-    // #[test]
-    // fn it_should_play_and_pause_a_pipe() {
-    //     gst::init().expect("Failed to initialize GStreamer.");
-
-    //     let pipe = Pipe::default();
-    //     let psm = PipeStateManager::new(pipe);
-    //     // psm.play().expect("Failed to play pipe");
-    // }
 }

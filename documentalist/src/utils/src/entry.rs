@@ -1,10 +1,12 @@
-use crate::{error::DiscovererError, PipeVisitor, Pipe, as_absolute_path_uri};
+use crate::{
+    as_absolute_path_uri, error::DiscovererError, Anchored, Continuous, EffectParser, Pipe,
+    PipeVisitor, TimeCompressionEffect, TimedEffects, TimelineElement, TrimEffect, VolumeEffect,
+};
 use anyhow::{Error, Result};
-use gst::prelude::*;
 use ges::prelude::*;
 use gst_pbutils::{DiscovererInfo, DiscovererStreamInfo};
-
-
+use serde::Deserialize;
+use serde_yaml::Value;
 
 /// Represents a video clip with it's start and end time.
 ///
@@ -15,33 +17,33 @@ use gst_pbutils::{DiscovererInfo, DiscovererStreamInfo};
 /// use ges::prelude::*;
 ///
 /// ges::init().expect("Failed to initialize GES.");
-/// 
+///
 /// let entry = Entry::from("tests/fixtures/short.mp4");
 /// let entry = Entry::from("tests/fixtures/short.mp4#t=10,20");
 /// let entry = Entry::from("tests/fixtures/short.mp4#t=10");
-/// let entry = Entry::from("tests/fixtures/short.mp4#t=,10");
-/// 
+/// let mut entry = Entry::from("tests/fixtures/short.mp4#t=,10");
+///
 /// let mut pipe = Pipe::default();
-/// 
+///
 /// entry.visit(&mut pipe).expect("Failed to visit pipe.");
 ///
-/// 
+///
 /// ```
-#[derive(Clone, Debug, Hash)]
-pub struct Entry{
+pub struct Entry {
     /// The path to the video file.
     pub path: String,
-    /// The start and end time of the clip.
-    pub trim: (Option<u64>, Option<u64>),
     /// The GES clip
     pub clip: ges::UriClip,
+    /// all effects applied to this entry
+    pub effects: TimedEffects<Entry>,
 }
 
 impl Entry {
     pub fn new(path: &str, trim_start: Option<u64>, trim_end: Option<u64>) -> Self {
         let clip = ges::UriClip::new(&path).unwrap();
-        let start = trim_start.map(|s| gst::ClockTime::from_useconds(s));
-        let end = trim_end.map(|s| gst::ClockTime::from_useconds(s));
+
+        let start = trim_start.map(|s| gst::ClockTime::from_nseconds(s));
+        let end = trim_end.map(|s| gst::ClockTime::from_nseconds(s));
         if let Some(start) = start {
             clip.set_inpoint(start);
         }
@@ -51,22 +53,11 @@ impl Entry {
         clip.set_meta("entry", Some(&glib::Value::from(path)));
         Self {
             path: path.to_string(),
-            trim: (trim_start, trim_end),
             clip,
+            effects: TimedEffects::default(),
         }
     }
 
-    pub fn duration(&self) -> gst::ClockTime {
-        // Retrieve the asset that was automatically used behind the scenes, to
-        // extract the clip from.
-        let asset = self.clip.asset().unwrap();
-        let duration = asset
-            .downcast::<ges::UriClipAsset>()
-            .unwrap()
-            .duration()
-            .expect("unknown duration");
-        duration
-    }
     pub fn discover(&self) -> Result<DiscovererInfo> {
         let discoverer = gst_pbutils::Discoverer::new(gst::ClockTime::from_seconds(15))?;
         let path = &self.path;
@@ -118,23 +109,139 @@ impl<'a> From<&'a str> for Entry {
             }
             (path, trim)
         };
-        Self::new(
-            path.as_str(),
-            trim.0,
-            trim.1,
-        )
+        Self::new(path.as_str(), trim.0, trim.1)
     }
 }
 
 impl PipeVisitor for Entry {
-    fn visit_layer_name(&self, name: &str, pipe: &mut Pipe) -> Result<()> {
+    fn visit_layer_name(&mut self, name: &str, pipe: &mut Pipe) -> Result<()> {
         let layer = pipe.layers.get(name).unwrap();
         layer.add_clip(&self.clip)?;
+        {
+            let effects = std::mem::replace(&mut self.effects, TimedEffects::default());
+            effects.apply(self, pipe)?;
+            self.effects = effects;
+        }
+
         Ok(())
     }
 }
 
+impl Anchored for Entry {
+    fn start(&self) -> gst::ClockTime {
+        self.clip.start()
+    }
 
+    fn set_start(&mut self, start: gst::ClockTime) {
+        self.clip.set_start(start);
+    }
+}
+
+impl Continuous for Entry {
+    fn duration(&self) -> gst::ClockTime {
+        self.clip.duration()
+    }
+
+    fn set_duration(&mut self, duration: gst::ClockTime) {
+        self.clip.set_duration(duration);
+    }
+
+    fn set_inpoint(&mut self, inpoint: gst::ClockTime) {
+        self.clip.set_inpoint(inpoint);
+    }
+}
+
+impl TimelineElement for Entry {}
+
+impl<'de> Deserialize<'de> for Entry {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let yaml = Value::deserialize(deserializer)?;
+        match yaml {
+            Value::Mapping(m) => {
+                assert_eq!(m.len(), 1);
+                let (path, effects) = m.into_iter().next().unwrap();
+                let path = match path {
+                    Value::String(s) => s,
+                    _ => return Err(serde::de::Error::custom("expected a string")),
+                };
+                let mut entry = Entry::from(path.as_str());
+                match effects {
+                    Value::Mapping(m) => {
+                        for m in m.into_iter() {
+                            let effects: TimedEffects<Entry> = serde_yaml::from_value(
+                                Value::Mapping(serde_yaml::Mapping::from_iter(vec![m])),
+                            )
+                            .map_err(|e| serde::de::Error::custom(e.to_string()))?;
+
+                            entry.effects.extend(effects);
+                        }
+                    }
+                    Value::Null => {}
+                    _ => return Err(serde::de::Error::custom("expected a sequence")),
+                }
+
+                Ok(entry)
+            }
+            _ => Err(serde::de::Error::custom("expected a mapping")),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for TimedEffects<Entry> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let yaml = Value::deserialize(deserializer)?;
+        let mut effects = TimedEffects::default();
+        if let Value::Mapping(map) = yaml {
+            assert_eq!(map.len(), 1);
+            let (timestamp, value) = map.into_iter().next().unwrap();
+            if TimedEffects::<Entry>::is_timestamp(&timestamp) {
+                let timestamp = TimedEffects::<Entry>::parse_timestamp(&timestamp).unwrap();
+                if let Value::Mapping(effects_map) = value {
+                    for (effect_name, effect_value) in effects_map.into_iter() {
+                        let effect_mapping =
+                            Value::Mapping(serde_yaml::Mapping::from_iter(vec![(
+                                effect_name,
+                                effect_value,
+                            )]));
+                        match effect_mapping {
+                            trim if TrimEffect::can_parse(&trim) => {
+                                let effect = TrimEffect::parse(&trim, &timestamp);
+                                effects.add(Box::new(effect));
+                            }
+                            vol if VolumeEffect::can_parse(&vol) => {
+                                let effect = VolumeEffect::parse(&vol, &timestamp);
+                                effects.add(Box::new(effect));
+                            }
+                            tc if TimeCompressionEffect::can_parse(&tc) => {
+                                let effect = TimeCompressionEffect::parse(&tc, &timestamp);
+                                effects.add(Box::new(effect));
+                            }
+                            ev => {
+                                return Err(serde::de::Error::custom(format!(
+                                    "expected entry effect, got {:#?}",
+                                    ev
+                                )))?
+                            }
+                        }
+                    }
+                    Ok(effects)
+                } else {
+                    Err(serde::de::Error::custom("expected a mapping"))?
+                }
+            } else {
+                Err(serde::de::Error::custom("expected timestamp"))?
+            }
+        } else {
+            Err(serde::de::Error::custom("expected mapping"))?
+        }
+    }
+}
 
 fn print_tags(info: &DiscovererInfo) {
     println!("Tags:");
@@ -193,53 +300,59 @@ mod tests {
 
         let entry = Entry::from("tests/fixtures/short.mp4#t=10,20");
 
-        assert_eq!(entry.trim, (Some(10), Some(20)));
+        assert_eq!(
+            (entry.clip.inpoint(), entry.clip.duration()),
+            (
+                gst::ClockTime::from_nseconds(10),
+                gst::ClockTime::from_nseconds(20)
+            )
+        );
 
         let entry = Entry::from("tests/fixtures/short.mp4#t=10");
 
-        assert_eq!(entry.trim, (Some(10), None));
+        assert_eq!(
+            (entry.clip.inpoint(), entry.clip.duration()),
+            (
+                gst::ClockTime::from_nseconds(10),
+                gst::ClockTime::from_nseconds(3000000000)
+            )
+        );
 
         let entry = Entry::from("tests/fixtures/short.mp4#t=,10");
 
-        assert_eq!(entry.trim, (None, Some(10)));
+        assert_eq!(
+            (entry.clip.inpoint(), entry.clip.duration()),
+            (
+                gst::ClockTime::from_nseconds(0),
+                gst::ClockTime::from_nseconds(10)
+            )
+        );
     }
 
     #[test]
     fn it_should_visit_pipe() {
         ges::init().expect("Failed to initialize GES.");
 
-        let entry = Entry::from("tests/fixtures/short.mp4");
+        let mut entry = Entry::from("tests/fixtures/short.mp4");
 
         let mut pipe = Pipe::default();
 
-        entry
-            .visit(&mut pipe)
-            .expect("Failed to visit pipe.");
+        entry.visit(&mut pipe).expect("Failed to visit pipe.");
 
         assert_eq!(pipe.pipeline.children().len(), 2);
         assert_eq!(pipe.layers.len(), 1);
         let default_layer = pipe.layers.get("default").unwrap();
         assert_eq!(default_layer.clips().len(), 1);
-
     }
 
     #[test]
-    fn it_should_get_duration(){
+    fn it_should_get_duration() {
         ges::init().expect("Failed to initialize GES.");
 
-        let entry = Entry::from("tests/fixtures/short.mp4");
+        let mut entry = Entry::from("tests/fixtures/short.mp4");
+        let mut pipe = Pipe::default();
+        entry.visit(&mut pipe).expect("Failed to visit pipe.");
 
-        assert_eq!(entry.duration(), gst::ClockTime::from_useconds(3000000));
+        assert_eq!(entry.duration(), gst::ClockTime::from_nseconds(3000000000));
     }
-
-    // #[test]
-    // fn it_should_print_discoverer_info() {
-
-    //     let entry = Entry::from("tests/fixtures/short.mp4");
-
-    //     entry
-    //         .print_discoverer_info()
-    //         .expect("Failed to print discoverer info.");
-
-    // }
 }

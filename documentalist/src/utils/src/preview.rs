@@ -11,7 +11,7 @@ use ges::prelude::*;
 pub struct Preview;
 
 impl Preview {
-    pub fn play(self, mut pipe: Pipe) -> Result<()> {
+    pub fn play(mut self, mut pipe: Pipe) -> Result<()> {
         self.visit(&mut pipe)?;
 
         pipe.pipeline.set_state(gst::State::Playing)?;
@@ -54,36 +54,36 @@ impl Preview {
                         .into()),
                     }?;
                 }
-                MessageView::StateChanged(s) => {
-                    println!(
-                        "State changed from {:?}: {:?} -> {:?} ({:?})",
-                        s.src().map(|s| s.path_string()),
-                        s.old(),
-                        s.current(),
-                        s.pending()
-                    );
-                }
-                MessageView::Progress(p) => {
-                    println!(
-                        "Progress from {:?}: {:?}",
-                        p.src().map(|s| s.path_string()),
-                        p.message()
-                    );
-                }
-                MessageView::StreamStatus(s) => {
-                    println!(
-                        "StreamStatus from {:?}: {:?}",
-                        s.src().map(|s| s.path_string()),
-                        s.message()
-                    );
-                }
-                MessageView::Application(a) => {
-                    println!(
-                        "Application from {:?}: {:?}",
-                        a.src().map(|s| s.path_string()),
-                        a.message()
-                    );
-                }
+                // MessageView::StateChanged(s) => {
+                //     println!(
+                //         "State changed from {:?}: {:?} -> {:?} ({:?})",
+                //         s.src().map(|s| s.path_string()),
+                //         s.old(),
+                //         s.current(),
+                //         s.pending()
+                //     );
+                // }
+                // MessageView::Progress(p) => {
+                //     println!(
+                //         "Progress from {:?}: {:?}",
+                //         p.src().map(|s| s.path_string()),
+                //         p.message()
+                //     );
+                // }
+                // MessageView::StreamStatus(s) => {
+                //     println!(
+                //         "StreamStatus from {:?}: {:?}",
+                //         s.src().map(|s| s.path_string()),
+                //         s.message()
+                //     );
+                // }
+                // MessageView::Application(a) => {
+                //     println!(
+                //         "Application from {:?}: {:?}",
+                //         a.src().map(|s| s.path_string()),
+                //         a.message()
+                //     );
+                // }
                 _ => (),
             }
         }
@@ -150,7 +150,7 @@ impl Preview {
 }
 
 impl PipeVisitor for Preview {
-    fn visit_layer_name(&self, _: &str, pipe: &mut Pipe) -> Result<()> {
+    fn visit_layer_name(&mut self, _: &str, pipe: &mut Pipe) -> Result<()> {
         let v_sink = gst::ElementFactory::make("autovideosink")
             .name("v_sink")
             .build()?;
@@ -159,15 +159,15 @@ impl PipeVisitor for Preview {
             .build()?;
         pipe.pipeline.set_video_sink(Some(&v_sink));
         pipe.pipeline.set_audio_sink(Some(&a_sink));
-        let layer = pipe.layers.get("default").unwrap();
+        // let layer = pipe.layers.get("default").unwrap();
         
-        // TODO: replace with global timeoverlay
-        layer.clips().iter_mut().for_each(|clip| {
-        let timeoverlay =
-            ges::Effect::new("timeoverlay").expect("Failed to create timeoverlay effect.");
-        TimelineElementExt::set_child_property(&timeoverlay, "time-mode", &1.into()).unwrap();
-            clip.add(&timeoverlay).unwrap();
-        });
+        // // TODO: replace with global timeoverlay
+        // layer.clips().iter_mut().for_each(|clip| {
+        // let timeoverlay =
+        //     ges::Effect::new("timeoverlay").expect("Failed to create timeoverlay effect.");
+        // TimelineElementExt::set_child_property(&timeoverlay, "time-mode", &1.into()).unwrap();
+        //     clip.add(&timeoverlay).unwrap();
+        // });
         
         Ok(())
     }

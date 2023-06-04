@@ -7,7 +7,7 @@ fn main() {
   
   
   Preview::run(move || {
-    let feed = Feed::new(vec!["tests/fixtures/short.mp4#t=10000,3000000", "tests/fixtures/repeat.mp4"]);
+    let mut feed = Feed::new(vec!["tests/fixtures/short.mp4#t=10000,3000000", "tests/fixtures/repeat.mp4"]);
   
     let mut pipe = Pipe::default();
   

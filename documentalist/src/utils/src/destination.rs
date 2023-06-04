@@ -12,7 +12,7 @@ use ges::prelude::*;
 ///
 /// ges::init().expect("Failed to initialize GStreamer.");
 ///
-/// let dest: Destination = "tests/out/destination.mkv".try_into().expect("cannot create destination");
+/// let mut dest: Destination = "tests/out/destination.mkv".try_into().expect("cannot create destination");
 ///
 ///
 /// let mut pipe = Pipe::default();
@@ -32,7 +32,7 @@ pub struct Destination(
 impl Destination {
     /// Creates a new destination from a path with encoding profiles.
     /// The container profile is determined by the file extension.
-    /// Currently supported container profiles are: mp4, mkv, avi, ogg, webm, ts
+    /// Currently supported container profiles are: mp4, mkv, ogg, webm
     /// The audio and video profiles are determined by the container profile.
     /// Currently supported audio profiles are: vorbis, opus, mp3, aac
     /// Currently supported video profiles are: theora, vp8, vp9, h264, h265
@@ -76,16 +76,16 @@ impl Destination {
                 gst::Caps::builder("video/webm").build(),
             ),
             // FIXME: these are failing
-            "avi" => (
-                gst::Caps::builder("audio/x-vorbis").build(),
-                gst::Caps::builder("video/x-theora").build(),
-                gst::Caps::builder("video/x-msvideo").build(),
-            ),
-            "ts" => (
-                gst::Caps::builder("audio/x-ac3").build(),
-                gst::Caps::builder("video/x-h264").build(),
-                gst::Caps::builder("video/mpegts").build(),
-            ),
+            // "avi" => (
+            //     gst::Caps::builder("audio/x-vorbis").build(),
+            //     gst::Caps::builder("video/x-theora").build(),
+            //     gst::Caps::builder("video/x-msvideo").build(),
+            // ),
+            // "ts" => (
+            //     gst::Caps::builder("audio/x-ac3").build(),
+            //     gst::Caps::builder("video/x-h264").build(),
+            //     gst::Caps::builder("video/mpegts").build(),
+            // ),
             _ => {
                 return Err(anyhow::anyhow!(
                     "Unsupported extension {} for path {}",
@@ -104,8 +104,6 @@ impl Destination {
             &video_profile_caps,
         )
         .build();
-
-        // video_profile.se
 
         let container_profile = gst_pbutils::EncodingContainerProfile::builder(
             &container_profile_caps,
@@ -133,8 +131,7 @@ impl<'a> From<&'a str> for Destination {
 }
 
 impl PipeVisitor for Destination {
-    fn visit_layer_name(&self, _: &str, pipe: &mut Pipe) -> Result<()> {
-        println!("output_uri: {}", self.0);
+    fn visit_layer_name(&mut self, _: &str, pipe: &mut Pipe) -> Result<()> {
         pipe.pipeline.set_render_settings(&self.0, &self.1)?;
         pipe.pipeline.set_mode(ges::PipelineFlags::RENDER)?;
         Ok(())
@@ -155,7 +152,7 @@ mod tests {
     fn it_should_visit_pipeline_with_mkv_destination() {
         ges::init().expect("Failed to initialize GStreamer.");
 
-        let destination = Destination::from("tests/out/destination.mkv");
+        let mut destination = Destination::from("tests/out/destination.mkv");
 
         let mut pipe = Pipe::default();
 
@@ -168,7 +165,7 @@ mod tests {
     fn it_should_visit_pipeline_with_mp4_destination() {
         ges::init().expect("Failed to initialize GStreamer.");
 
-        let destination = Destination::from("tests/out/destination.mp4");
+        let mut destination = Destination::from("tests/out/destination.mp4");
 
         let mut pipe = Pipe::default();
 
@@ -177,24 +174,24 @@ mod tests {
             .expect("Failed to create pipeline from destination.");
     }
 
-    #[test]
-    #[ignore]
-    fn it_should_visit_pipeline_with_avi_destination() {
-        ges::init().expect("Failed to initialize GStreamer.");
+    // #[test]
+    // #[ignore]
+    // fn it_should_visit_pipeline_with_avi_destination() {
+    //     ges::init().expect("Failed to initialize GStreamer.");
 
-        let destination = Destination::from("tests/out/destination.avi");
+    //     let mut destination = Destination::from("tests/out/destination.avi");
 
-        let mut pipe = Pipe::default();
+    //     let mut pipe = Pipe::default();
 
-        destination
-            .visit(&mut pipe)
-            .expect("Failed to create pipeline from destination.");
-    }
+    //     destination
+    //         .visit(&mut pipe)
+    //         .expect("Failed to create pipeline from destination.");
+    // }
     #[test]
     fn it_should_visit_pipeline_with_ogg_destination() {
         ges::init().expect("Failed to initialize GStreamer.");
 
-        let destination = Destination::from("tests/out/destination.ogg");
+        let mut destination = Destination::from("tests/out/destination.ogg");
 
         let mut pipe = Pipe::default();
 
@@ -207,7 +204,7 @@ mod tests {
     fn it_should_visit_pipeline_with_webm_destination() {
         ges::init().expect("Failed to initialize GStreamer.");
 
-        let destination = Destination::from("tests/out/destination.webm");
+        let mut destination = Destination::from("tests/out/destination.webm");
 
         let mut pipe = Pipe::default();
 
@@ -216,17 +213,17 @@ mod tests {
             .expect("Failed to create pipeline from destination.");
     }
 
-    #[test]
-    #[ignore]
-    fn it_should_visit_pipeline_with_ts_destination() {
-        ges::init().expect("Failed to initialize GStreamer.");
+    // #[test]
+    // #[ignore]
+    // fn it_should_visit_pipeline_with_ts_destination() {
+    //     ges::init().expect("Failed to initialize GStreamer.");
 
-        let destination = Destination::from("tests/out/destination.ts");
+    //     let mut destination = Destination::from("tests/out/destination.ts");
 
-        let mut pipe = Pipe::default();
+    //     let mut pipe = Pipe::default();
 
-        destination
-            .visit(&mut pipe)
-            .expect("Failed to create pipeline from destination.");
-    }
+    //     destination
+    //         .visit(&mut pipe)
+    //         .expect("Failed to create pipeline from destination.");
+    // }
 }

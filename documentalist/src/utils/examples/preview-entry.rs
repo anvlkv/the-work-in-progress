@@ -7,7 +7,7 @@ fn main() {
   
   
   Preview::run(move || {
-    let entry = Entry::from("tests/fixtures/short.mp4");
+    let mut entry = Entry::from("tests/fixtures/short.mp4");
   
     let mut pipe = Pipe::default();
   

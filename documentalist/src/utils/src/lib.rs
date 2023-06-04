@@ -5,14 +5,17 @@ mod feed;
 mod preview;
 mod destination;
 mod pipe_state_manager;
-mod timeline;
+mod project;
+mod effects;
 
-pub use entry::{Entry};
-pub use pipe::{Pipe, PipeVisitor};
-pub use feed::{Feed};
-pub use preview::{Preview};
-pub use destination::{Destination};
-pub use pipe_state_manager::{PipeStateManager};
+pub use entry::*;
+pub use pipe::*;
+pub use feed::*;
+pub use preview::*;
+pub use destination::*;
+pub use pipe_state_manager::*;
+pub use project::*;
+pub use effects::*;
 
 pub fn as_absolute_path_uri(path: &str) -> String {
   use path_absolutize::*;
@@ -20,3 +23,4 @@ pub fn as_absolute_path_uri(path: &str) -> String {
   let absolute_path = path.absolutize().unwrap();
   format!("file://{}", absolute_path.to_str().unwrap())
 }
+
