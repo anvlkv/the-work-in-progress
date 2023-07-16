@@ -1,25 +1,31 @@
 use std::sync::Mutex;
 
-use crate::{Anchored, Pipe, TimelineElement};
+use crate::{OptionalContinuous, Pipe, TimelineElement};
 use anyhow::{Error, Result};
 use serde_yaml::Value;
 
+mod tc;
 mod trim;
 mod vol;
-mod tc;
-mod bin;
 
+pub use tc::*;
 pub use trim::*;
 pub use vol::*;
-pub use tc::*;
-pub use bin::*;
 
+pub trait Effect<T: TimelineElement>: OptionalContinuous {
+    fn apply(&self, clip: &mut T, pipe: &mut Pipe, layer_name: &str) -> Result<()>;
 
-pub trait Effect<T: TimelineElement>: Anchored {
-    fn apply(&self, clip:&mut T, pipe: &mut Pipe) -> Result<()>;
+    fn spill_over_effect(&self) -> Option<Box<dyn Effect<T>>> {
+        None
+    }
+
+    fn tok(&self) -> &str;
 }
 
-pub trait EffectParser<T: TimelineElement> where Self: Effect<T> {
+pub trait EffectParser<T: TimelineElement>
+where
+    Self: Effect<T>,
+{
     fn can_parse(yaml: &Value) -> bool;
     fn parse(yaml: &Value, timestamp: &gst::ClockTime) -> Self;
 }
@@ -33,9 +39,9 @@ impl<T: TimelineElement> Default for TimedEffects<T> {
 }
 
 impl<T: TimelineElement> TimedEffects<T> {
-    pub fn apply(&self, clip:&mut T, pipe: &mut Pipe) -> Result<()> {
+    pub fn apply(&self, clip: &mut T, pipe: &mut Pipe, layer_name: &str) -> Result<()> {
         for effect in self.0.lock().unwrap().iter() {
-            effect.apply(clip, pipe)?;
+            effect.apply(clip, pipe, layer_name)?;
         }
         Ok(())
     }
@@ -47,7 +53,23 @@ impl<T: TimelineElement> TimedEffects<T> {
     pub fn add(&mut self, effect: Box<dyn Effect<T>>) {
         self.0.lock().unwrap().push(effect);
     }
-    
+
+    pub fn prepend(&mut self, other: TimedEffects<T>) {
+        let mut next_effects = vec![];
+        let mut other_effects = other.0.into_inner().unwrap().into_iter();
+
+        while let Some(mut ef) = other_effects.next() {
+            let effects = self.0.lock().unwrap();
+            let following_effect = effects.iter().find(|e| e.tok() == ef.tok());
+            ef.set_duration(following_effect.map(|e| e.start()));
+
+            next_effects.push(ef);
+        }
+        if !next_effects.is_empty() {
+            self.0.get_mut().unwrap().splice(0..0, next_effects);
+        }
+    }
+
     pub fn is_timestamp(yaml: &Value) -> bool {
         let re = regex::Regex::new(r"(\d\d:)?(\d\d:)?\d\d(\.\d+)?").unwrap();
         match yaml {
@@ -125,4 +147,3 @@ impl<T: TimelineElement> TimedEffects<T> {
         Ok(ts)
     }
 }
-

@@ -1,7 +1,7 @@
 use crate::Feed;
 
 use super::{Pipe, PipeVisitor};
-use anyhow::{Result, Error};
+use anyhow::{Error, Result};
 use serde::Deserialize;
 
 pub trait Anchored {
@@ -12,6 +12,12 @@ pub trait Continuous: Anchored {
     fn duration(&self) -> gst::ClockTime;
     fn set_duration(&mut self, end: gst::ClockTime);
     fn set_inpoint(&mut self, inpoint: gst::ClockTime);
+}
+
+pub trait OptionalContinuous: Anchored {
+    fn duration(&self) -> Option<gst::ClockTime>;
+    fn set_duration(&mut self, end: Option<gst::ClockTime>);
+    fn set_inpoint(&mut self, inpoint: Option<gst::ClockTime>);
 }
 
 pub trait TimelineElement: Continuous + PipeVisitor {}
@@ -27,8 +33,8 @@ impl Anchored for Project {
         gst::ClockTime::default()
     }
     fn set_start(&mut self, _: gst::ClockTime) {
-      panic!("project cannot have a set start")
-  }
+        panic!("project cannot have a set start")
+    }
 }
 
 impl Continuous for Project {
@@ -50,14 +56,12 @@ impl Continuous for Project {
 impl PipeVisitor for Project {
     fn visit_layer_name(&mut self, name: &str, pipe: &mut Pipe) -> Result<()> {
         let mut duration = gst::ClockTime::default();
-        self.0
-            .iter_mut()
-            .try_for_each(|e| {
-                e.set_start(duration);
-                e.visit_layer_name(name, pipe)?;
-                duration += e.duration();
-                Ok::<(), Error>(())
-            })?;
+        self.0.iter_mut().try_for_each(|e| {
+            e.set_start(duration);
+            e.visit_layer_name(name, pipe)?;
+            duration += e.duration();
+            Ok::<(), Error>(())
+        })?;
         Ok(())
     }
 }
@@ -137,7 +141,9 @@ mod tests {
         let mut pipe = Pipe::default();
         project.visit(&mut pipe).unwrap();
         println!("{:?}", project.duration().nseconds());
-        assert_eq!(project.duration(), gst::ClockTime::from_nseconds(76019999750));
-
+        assert_eq!(
+            project.duration(),
+            gst::ClockTime::from_nseconds(76019999750)
+        );
     }
 }

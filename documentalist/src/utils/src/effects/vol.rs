@@ -1,11 +1,11 @@
 use super::{Effect, EffectParser};
-use crate::{Anchored, Entry, Pipe};
+use crate::{Anchored, OptionalContinuous, Entry, Pipe};
 use anyhow::Result;
 use ges::{prelude::*, gst};
 // use std::collections::HashMap;
 
 #[derive(Clone, Copy)]
-pub struct VolumeEffect(pub f64, pub gst::ClockTime);
+pub struct VolumeEffect(pub f64, pub gst::ClockTime, pub Option<gst::ClockTime>);
 
 impl Anchored for VolumeEffect {
     fn start(&self) -> gst::ClockTime {
@@ -13,6 +13,18 @@ impl Anchored for VolumeEffect {
     }
     fn set_start(&mut self, start: gst::ClockTime) {
         self.1 = start;
+    }
+}
+
+impl OptionalContinuous for VolumeEffect {
+    fn duration(&self) -> Option<gst::ClockTime> {
+        self.2
+    }
+    fn set_duration(&mut self, end: Option<gst::ClockTime>) {
+        self.2 = end;
+    }
+    fn set_inpoint(&mut self, inpoint: Option<gst::ClockTime>) {
+        self.1 = inpoint.unwrap();
     }
 }
 
@@ -38,11 +50,11 @@ impl EffectParser<Entry> for VolumeEffect {
     fn parse(yaml: &serde_yaml::Value, timestamp: &gst::ClockTime) -> Self {
         let (_, vol) = yaml.as_mapping().unwrap().iter().next().unwrap();
         if vol.is_f64() {
-            VolumeEffect(vol.as_f64().unwrap(), *timestamp)
+            VolumeEffect(vol.as_f64().unwrap(), *timestamp, None)
         } else if vol.is_u64() {
-            VolumeEffect(vol.as_u64().unwrap() as f64, *timestamp)
+            VolumeEffect(vol.as_u64().unwrap() as f64, *timestamp, None)
         } else if vol.is_i64() {
-            VolumeEffect(vol.as_i64().unwrap().abs() as f64, *timestamp)
+            VolumeEffect(vol.as_i64().unwrap().abs() as f64, *timestamp, None)
         } else {
             panic!("invalid vol effect");
         }
@@ -50,11 +62,26 @@ impl EffectParser<Entry> for VolumeEffect {
 }
 
 impl Effect<Entry> for VolumeEffect {
-    fn apply(&self, entry: &mut Entry, pipe: &mut Pipe) -> Result<()> {
-        let props = gst::Structure::builder("volume_props")
-            .field("volume", self.0)
-            .build();
-        pipe.effects_bin.add_anchored_effect("volume", self.start(),  props);
+    fn apply(&self, entry: &mut Entry, _: &mut Pipe, _: &str) -> Result<()> {
+        let ef =ges::Effect::new(&format!("volume volume={}", self.0))?;
+        ef.set_start(self.1);
+        if let Some(end) = self.2 {
+            ef.set_duration(end - self.1);
+        }
+        entry.clip.add(&ef)?;
         Ok(())
+    }
+
+    fn spill_over_effect(&self) -> Option<Box<dyn Effect<Entry>>> {
+        if self.2.is_none() {
+            Some(Box::new(VolumeEffect(self.0, gst::ClockTime::default(), None)))
+        }
+        else {
+            None
+        }
+    }
+
+    fn tok(&self) -> &str {
+        "vol"
     }
 }

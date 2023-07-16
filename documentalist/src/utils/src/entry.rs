@@ -1,5 +1,7 @@
+use std::collections::HashMap;
+
 use crate::{
-    as_absolute_path_uri, error::DiscovererError, Anchored, Continuous, EffectParser, Pipe,
+    as_absolute_path_uri, error::DiscovererError, Anchored, Continuous, Effect, EffectParser, Pipe,
     PipeVisitor, TimeCompressionEffect, TimedEffects, TimelineElement, TrimEffect, VolumeEffect,
 };
 use anyhow::{Error, Result};
@@ -29,6 +31,7 @@ use serde_yaml::Value;
 ///
 ///
 /// ```
+
 pub struct Entry {
     /// The path to the video file.
     pub path: String,
@@ -119,7 +122,7 @@ impl PipeVisitor for Entry {
         layer.add_clip(&self.clip)?;
         {
             let effects = std::mem::replace(&mut self.effects, TimedEffects::default());
-            effects.apply(self, pipe)?;
+            effects.apply(self, pipe, name)?;
             self.effects = effects;
         }
 
@@ -209,18 +212,43 @@ impl<'de> Deserialize<'de> for TimedEffects<Entry> {
                                 effect_name,
                                 effect_value,
                             )]));
+                        let mut running_effects: HashMap<&str, &mut Box<dyn Effect<Entry>>> =
+                            HashMap::new();
                         match effect_mapping {
                             trim if TrimEffect::can_parse(&trim) => {
                                 let effect = TrimEffect::parse(&trim, &timestamp);
-                                effects.add(Box::new(effect));
+                                let mut box_ef: Box<dyn Effect<Entry>> = Box::new(effect);
+                                let mut previous_effect = match effect {
+                                    TrimEffect::Start(_, _) => {
+                                        running_effects.insert("trim_start", &mut box_ef)
+                                    }
+                                    TrimEffect::End(_, _) => {
+                                        running_effects.insert("trim_end", &mut box_ef)
+                                    }
+                                };
+                                if let Some(ef) = previous_effect.as_mut() {
+                                    ef.set_duration(Some(timestamp - ef.start()));
+                                }
+                                effects.add(box_ef);
                             }
                             vol if VolumeEffect::can_parse(&vol) => {
                                 let effect = VolumeEffect::parse(&vol, &timestamp);
-                                effects.add(Box::new(effect));
+                                let mut box_ef: Box<dyn Effect<Entry>> = Box::new(effect);
+                                let mut previous_effect =
+                                    running_effects.insert("vol", &mut box_ef);
+                                if let Some(ef) = previous_effect.as_mut() {
+                                    ef.set_duration(Some(timestamp - ef.start()));
+                                }
+                                effects.add(box_ef);
                             }
                             tc if TimeCompressionEffect::can_parse(&tc) => {
                                 let effect = TimeCompressionEffect::parse(&tc, &timestamp);
-                                effects.add(Box::new(effect));
+                                let mut box_ef: Box<dyn Effect<Entry>> = Box::new(effect);
+                                let mut previous_effect = running_effects.insert("tc", &mut box_ef);
+                                if let Some(ef) = previous_effect.as_mut() {
+                                    ef.set_duration(Some(timestamp - ef.start()));
+                                }
+                                effects.add(box_ef);
                             }
                             ev => {
                                 return Err(serde::de::Error::custom(format!(

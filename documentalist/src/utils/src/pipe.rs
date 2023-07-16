@@ -1,4 +1,3 @@
-use crate::effects_bin::EffectsBin;
 use std::collections::HashMap;
 
 use ges::prelude::*;
@@ -12,7 +11,6 @@ pub struct Pipe {
     pub timeline: ges::Timeline,
     pub layers: HashMap<String, ges::Layer>,
     pub tracks: (Option<ges::AudioTrack>, Option<ges::VideoTrack>),
-    pub effects_bin: EffectsBin,
 }
 
 impl Pipe {
@@ -26,9 +24,6 @@ impl Pipe {
         pipeline.set_timeline(&timeline)?;
         let mut layers = HashMap::new();
         layers.insert("default".to_string(), default_layer);
-
-        let effects_bin = EffectsBin::new();
-        let effects_bin_element = effects_bin.upcast_ref::<gst::Element>();
 
         let tracks = {
             let audio_track = timeline
@@ -44,20 +39,13 @@ impl Pipe {
             (audio_track, video_track)
         };
 
-        timeline.add(effects_bin_element)?;
-
         Ok(Self {
             pipeline,
             timeline,
             layers,
             tracks,
-            effects_bin,
         })
     }
-
-    // fn bind_effects_bin(&mut self) {
-    //     println!("mode: {:?}", self.pipeline.mode());
-    // }
 
     pub fn pipeline_to_dot_file(&self, path: &str) -> anyhow::Result<()> {
         let dot_data = self

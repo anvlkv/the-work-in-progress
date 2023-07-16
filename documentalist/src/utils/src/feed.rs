@@ -1,4 +1,6 @@
-use crate::{Entry, Pipe, PipeVisitor, TimelineContainer, TimelineElement, Continuous, Anchored};
+use crate::{
+    Anchored, Continuous, Effect, Entry, Pipe, PipeVisitor, TimelineContainer, TimelineElement,
+};
 use anyhow::Result;
 use ges::prelude::*;
 use serde::Deserialize;
@@ -35,7 +37,10 @@ impl Feed {
     /// * `paths` - The paths to the video files.
     ///
     pub fn new(paths: Vec<&str>) -> Self {
-        Self(paths.into_iter().map(|path| path.into()).collect(), ges::Group::new())
+        Self(
+            paths.into_iter().map(|path| path.into()).collect(),
+            ges::Group::new(),
+        )
     }
 }
 
@@ -52,7 +57,6 @@ impl PipeVisitor for Feed {
         Ok(())
     }
 }
-
 
 impl Anchored for Feed {
     fn start(&self) -> gst::ClockTime {
@@ -90,7 +94,7 @@ impl<'de> Deserialize<'de> for Feed {
     {
         let yaml = serde_yaml::Value::deserialize(deserializer)?;
         let mut feed = Self::new(vec![]);
-
+        let mut un_ended_effects: Vec<Box<dyn Effect<Entry>>> = vec![];
         match yaml {
             serde_yaml::Value::Mapping(m) => {
                 assert_eq!(m.len(), 1);
@@ -103,13 +107,31 @@ impl<'de> Deserialize<'de> for Feed {
                                 serde_yaml::Mapping::from_iter(vec![(k.clone(), v.clone())]),
                             );
 
-                            let entry: Entry =
+                            let mut entry: Entry =
                                 serde_yaml::from_value(entry_mapping).map_err(|e| {
                                     serde::de::Error::custom(format!(
                                         "failed to parse entry: {}",
                                         e
                                     ))
                                 })?;
+
+                            entry
+                                .effects
+                                .prepend(crate::TimedEffects(std::sync::Mutex::new(
+                                    un_ended_effects,
+                                )));
+
+                            un_ended_effects = entry
+                                .effects
+                                .0
+                                .lock()
+                                .unwrap()
+                                .iter()
+                                .filter_map(|e| e.spill_over_effect())
+                                .collect();
+
+                            println!("un_ended_effects: {}", un_ended_effects.len());
+
                             feed.0.push(entry);
                         }
                         Ok(feed)
